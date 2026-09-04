@@ -1,4 +1,4 @@
-"""Data ingestion, synthetic generation, and weather acquisition package for Delhi Electricity Demand."""
+"""Data ingestion, synthetic generation, weather acquisition, preprocessing, and validation."""
 
 from src.data.generate_synthetic import (
     generate_synthetic_demand,
@@ -16,6 +16,17 @@ from src.data.data_loader import (
     load_renewable_data,
     load_area_data,
 )
+from src.data.validator import (
+    validate_dataset,
+    run_data_validation,
+    ValidationResult,
+)
+from src.data.preprocessing import (
+    normalize_to_kolkata_timestamp,
+    clean_and_resample_hourly,
+    align_demand_and_weather,
+    preprocess_and_save_dataset,
+)
 
 __all__ = [
     "generate_synthetic_demand",
@@ -28,4 +39,11 @@ __all__ = [
     "load_weather",
     "load_renewable_data",
     "load_area_data",
+    "validate_dataset",
+    "run_data_validation",
+    "ValidationResult",
+    "normalize_to_kolkata_timestamp",
+    "clean_and_resample_hourly",
+    "align_demand_and_weather",
+    "preprocess_and_save_dataset",
 ]
