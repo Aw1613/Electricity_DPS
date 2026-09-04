@@ -132,7 +132,7 @@ def render_top_peaks_table(top_peaks_df: pd.DataFrame):
         "day_name": "Day",
     }
     display_df = display_df.rename(columns={k: v for k, v in col_names.items() if k in display_df.columns})
-    st.dataframe(display_df, width="stretch", hide_index=True)
+    st.dataframe(display_df, use_container_width=True, hide_index=True)
 
 
 
