@@ -97,3 +97,23 @@ def test_dashboard_master_payload():
     assert len(fc_24h["forecast_df"]) == 24
     assert fc_24h["peak_demand_mw"] > 0
     assert "top_peaks" in fc_24h
+
+
+def test_dashboard_components(monkeypatch):
+    """Verify UI components handle parameters including delta_color without errors."""
+    from dashboard.components import render_kpi_card, render_alert_banner, render_top_peaks_table
+
+    metric_calls = []
+    monkeypatch.setattr("streamlit.metric", lambda *args, **kwargs: metric_calls.append(kwargs))
+
+    render_kpi_card(
+        label="24h Forecast Peak",
+        value="6,500 MW",
+        delta="+450 MW surge",
+        delta_color="inverse",
+        help_text="Test tooltip",
+    )
+    assert len(metric_calls) == 1
+    assert metric_calls[0]["delta_color"] == "inverse"
+    assert metric_calls[0]["label"] == "24h Forecast Peak"
+

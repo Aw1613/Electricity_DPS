@@ -31,9 +31,12 @@ def render_kpi_card(
     value: str,
     delta: Optional[str] = None,
     help_text: Optional[str] = None,
+    delta_color: str = "normal",
+    **kwargs: Any,
 ):
     """Render a styled KPI metric card."""
-    st.metric(label=label, value=value, delta=delta, help=help_text)
+    st.metric(label=label, value=value, delta=delta, help=help_text, delta_color=delta_color, **kwargs)
+
 
 
 def render_alert_banner(
