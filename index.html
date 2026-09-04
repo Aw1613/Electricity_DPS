@@ -87,24 +87,33 @@
       background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
     }
 
-    /* Hero ambient scrim & grid */
+    /* Hero background video & scrim */
     .hero-photo {
       position: fixed;
       inset: 0;
       z-index: 0;
-      background: radial-gradient(circle at 50% 30%, rgba(30, 58, 138, 0.18) 0%, rgba(15, 23, 42, 0.08) 45%, #000000 75%);
+      overflow: hidden;
       pointer-events: none;
+      background: #000000;
+    }
+    .hero-video {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      min-width: 100%;
+      min-height: 100%;
+      width: auto;
+      height: auto;
+      transform: translate(-50%, -50%);
+      object-fit: cover;
+      opacity: 1;
     }
     .hero-photo::after {
       content: "";
       position: absolute;
       inset: 0;
-      background-image: 
-        linear-gradient(rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
-      background-size: 64px 64px;
-      mask-image: radial-gradient(ellipse at 50% 50%, #000 20%, transparent 70%);
-      -webkit-mask-image: radial-gradient(ellipse at 50% 50%, #000 20%, transparent 70%);
+      background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.6) 70%, #000000 100%);
+      pointer-events: none;
     }
 
     /* Page container */
@@ -710,7 +719,14 @@
 </head>
 <body style="background:#000;color:#fff">
   <div class="grain"></div>
-  <div class="hero-photo"></div>
+  <div class="hero-photo">
+    <video autoplay loop muted playsinline class="hero-video">
+      <source src="assets/hero_bg.mp4" type="video/mp4">
+      <source src="static/hero_bg.mp4" type="video/mp4">
+      <source src="app/static/hero_bg.mp4" type="video/mp4">
+      <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260818_072341_50851634-bbc3-4c33-9acc-7647d4db44aa.mp4" type="video/mp4">
+    </video>
+  </div>
 
   <div class="page">
     <div class="menu-backdrop"></div>
@@ -739,7 +755,7 @@
 
       <!-- Right: Action & Mobile Burger -->
       <div style="display: flex; align-items: center; gap: 10px; justify-self: end;">
-        <a href="/?view=command_center" target="_top" class="btn btn-solid header-cta appear appear--scale" style="--d: 0.34s;">Launch Command Center</a>
+        <a href="/?view=command_center" target="_top" onclick="goToCommandCenter(); return false;" class="btn btn-solid header-cta appear appear--scale" style="--d: 0.34s;">Launch Command Center</a>
         <button class="burger" aria-controls="site-nav" aria-expanded="false" aria-label="Open menu">
           <span class="burger-bar"></span>
           <span class="burger-bar"></span>
@@ -772,10 +788,10 @@
 
         <!-- Hero Actions -->
         <div class="hero-actions">
-          <a href="/?view=command_center" target="_top" class="btn btn-solid hero-btn appear appear--btn" style="--d: 0.96s;">
+          <a href="/?view=command_center" target="_top" onclick="goToCommandCenter(); return false;" class="btn btn-solid hero-btn appear appear--btn" style="--d: 0.96s;">
             Launch Command Center
           </a>
-          <a href="/?view=command_center&tab=forecast" target="_top" class="btn btn-ghost hero-btn appear appear--side" style="--d: 1.10s;">
+          <a href="/?view=command_center&tab=forecast" target="_top" onclick="goToCommandCenter('forecast'); return false;" class="btn btn-ghost hero-btn appear appear--side" style="--d: 1.10s;">
             See 7-Day Forecast
           </a>
         </div>
@@ -842,7 +858,43 @@
   </div>
 
   <script>
+    function goToCommandCenter(tab) {
+      var base = window.location.protocol === 'file:' ? 'http://localhost:8501/' : '/';
+      var url = base + '?view=command_center' + (tab ? '&tab=' + tab : '');
+      try {
+        if (window.top && window.top !== window) {
+          window.top.location.href = url;
+          return;
+        }
+      } catch(e) {}
+      window.location.href = url;
+    }
+
     (function() {
+            // Robust navigation handler for buttons and pills
+      document.querySelectorAll('.btn, .nav-pill').forEach(function(el) {
+        el.addEventListener('click', function(e) {
+          var href = el.getAttribute('href');
+          if (href && href.startsWith('#')) return;
+          e.preventDefault();
+          var target = '/?view=command_center';
+          if (href && href.indexOf('tab=') !== -1) {
+            var tab = href.split('tab=')[1];
+            target = '/?view=command_center&tab=' + tab;
+          }
+          if (window.location.protocol === 'file:') {
+            target = 'http://localhost:8501' + target;
+          }
+          try {
+            if (window.top && window.top !== window) {
+              window.top.location.href = target;
+              return;
+            }
+          } catch (err) {}
+          window.location.href = target;
+        });
+      });
+
       // 1. Element animationend handler
       var appears = document.querySelectorAll('.appear');
       appears.forEach(function(el) {

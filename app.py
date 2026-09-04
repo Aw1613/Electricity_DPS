@@ -179,37 +179,33 @@ def main():
     # 1. EXECUTIVE SINGLE-VIEWPORT LANDING PAGE VIEW
     # =============================================================
     if active_view == "landing":
-        # Clean full-bleed landing styling: hide sidebar and default headers
-        st.markdown(
-            """
+        index_file = os.path.join(os.path.dirname(__file__), "index.html")
+        if os.path.exists(index_file):
+            with open(index_file, "r", encoding="utf-8") as f:
+                landing_html = f.read()
+
+            # Clean full-bleed landing styling: eliminate Streamlit padding, header, and sidebar
+            landing_wrapper_css = """
             <style>
             [data-testid="stSidebar"] { display: none !important; }
             [data-testid="stHeader"] { display: none !important; }
             [data-testid="stToolbar"] { display: none !important; }
             footer { display: none !important; }
-            .main .block-container {
+            #MainMenu { display: none !important; }
+            header { display: none !important; }
+            .main, [data-testid="stAppViewContainer"], [data-testid="stMainBlockContainer"], .block-container {
                 padding: 0 !important;
                 margin: 0 !important;
-                max-width: 100% !important;
-                height: 100vh !important;
-                overflow: hidden !important;
-            }
-            iframe {
-                border: none !important;
+                max-width: 100vw !important;
                 width: 100vw !important;
                 height: 100vh !important;
-                display: block !important;
+                max-height: 100vh !important;
+                overflow: hidden !important;
+                background: #000000 !important;
             }
             </style>
-            """,
-            unsafe_allow_html=True,
-        )
-
-        index_file = os.path.join(os.path.dirname(__file__), "index.html")
-        if os.path.exists(index_file):
-            with open(index_file, "r", encoding="utf-8") as f:
-                landing_html = f.read()
-            st.components.v1.html(landing_html, height=1000, scrolling=True)
+            """
+            st.markdown(landing_wrapper_css + landing_html, unsafe_allow_html=True)
         else:
             st.error("index.html landing page file not found.")
         return
