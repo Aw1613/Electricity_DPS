@@ -20,6 +20,7 @@ MOCK_DIR = DATA_DIR / "mock"
 def load_historical_demand(
     filepath: Optional[Union[str, Path]] = None,
     aggregate_total: bool = True,
+    demo_mode: bool = False,
 ) -> pd.DataFrame:
     """Load historical electricity demand data into a standardized DataFrame.
 
@@ -28,11 +29,16 @@ def load_historical_demand(
     Args:
         filepath: Optional path to specific demand CSV.
         aggregate_total: If True and area/feeder columns exist, aggregates total demand_mw by timestamp.
+        demo_mode: If True, bypasses raw files and uses local synthetic mock data.
 
     Returns:
         DataFrame containing sorted ['timestamp', 'demand_mw'] (or with area/feeder if aggregate_total=False).
     """
-    if filepath is not None:
+    if demo_mode:
+        target_path = MOCK_DIR / "synthetic_demand.csv"
+        if not target_path.exists():
+            generate_synthetic_demand(output_path=target_path)
+    elif filepath is not None:
         target_path = Path(filepath)
     elif (RAW_DIR / "load.csv").exists():
         target_path = RAW_DIR / "load.csv"
@@ -90,6 +96,7 @@ def load_weather(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
     filepath: Optional[Union[str, Path]] = None,
+    demo_mode: bool = False,
 ) -> pd.DataFrame:
     """Load weather data for Delhi into a standardized DataFrame.
 
@@ -99,12 +106,14 @@ def load_weather(
         DataFrame with ['timestamp', 'temperature_2m', 'relative_humidity_2m',
                         'apparent_temperature', 'precipitation', 'wind_speed_10m']
     """
-    if filepath is not None:
+    if demo_mode:
+        df = fetch_weather_data(start_date=start_date, end_date=end_date, demo_mode=True)
+    elif filepath is not None:
         df = pd.read_csv(Path(filepath))
     elif (RAW_DIR / "weather.csv").exists():
         df = pd.read_csv(RAW_DIR / "weather.csv")
     else:
-        df = fetch_weather_data(start_date=start_date, end_date=end_date)
+        df = fetch_weather_data(start_date=start_date, end_date=end_date, demo_mode=False)
 
     df.columns = [c.strip().lower() for c in df.columns]
 

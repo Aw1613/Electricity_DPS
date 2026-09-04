@@ -62,6 +62,19 @@ def test_evaluate_demand_alert_critical():
     assert "🚨" in res["icon"]
 
 
+def test_threshold_boundary_cases():
+    """Verify strict mathematical boundaries: exactly 85% and 95% transitions."""
+    cap = 10000.0
+    # 84.99% -> NORMAL
+    assert evaluate_demand_alert(demand_mw=8499.0, capacity_mw=cap)["status"] == "NORMAL"
+    # 85.00% -> WARNING (inclusive boundary)
+    assert evaluate_demand_alert(demand_mw=8500.0, capacity_mw=cap)["status"] == "WARNING"
+    # 94.99% -> WARNING
+    assert evaluate_demand_alert(demand_mw=9499.0, capacity_mw=cap)["status"] == "WARNING"
+    # 95.00% -> CRITICAL (inclusive boundary)
+    assert evaluate_demand_alert(demand_mw=9500.0, capacity_mw=cap)["status"] == "CRITICAL"
+
+
 def test_evaluate_forecast_alerts():
     """Verify timeline alerts on a multi-hour forecast DataFrame."""
     demands = [7000.0] * 10 + [8000.0] * 5 + [8600.0] * 3

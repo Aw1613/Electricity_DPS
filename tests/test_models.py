@@ -4,6 +4,7 @@ import sys
 from pathlib import Path
 import numpy as np
 import pandas as pd
+import pytest
 
 # Add project root to sys.path
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -149,9 +150,28 @@ def test_train_and_predict_pipeline():
             test_model_path.unlink()
 
 
+def test_feature_dimensions():
+    """Verify feature dimension alignment, required columns, and schema validation."""
+    from src.features.build_features import get_feature_columns
+
+    feature_cols = get_feature_columns()
+    assert len(feature_cols) == 24, f"Expected 24 features, got {len(feature_cols)}"
+
+    # Verify model loaded from default path expects matching feature dimensions
+    model, model_features, metadata = load_demand_model()
+    assert len(model_features) == 24
+    assert set(model_features) == set(feature_cols)
+
+    # Test error raised when feature dimension is missing
+    incomplete_features = {f: 1.0 for f in feature_cols if f != "temperature"}
+    with pytest.raises(ValueError, match="missing required columns"):
+        predict_demand(incomplete_features)
+
+
 if __name__ == "__main__":
     test_baseline_forecaster()
     test_evaluation_metrics()
     test_chronological_split()
     test_train_and_predict_pipeline()
+    test_feature_dimensions()
     print("\nAll model layer unit tests completed successfully!")

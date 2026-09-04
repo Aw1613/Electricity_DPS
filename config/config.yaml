@@ -1,5 +1,7 @@
 # Delhi Electricity Demand Prediction System - Configuration
+data_mode: "DEMONSTRATION / SYNTHETIC"
 grid_capacity_mw: 9000
 warning_threshold: 0.85
 critical_threshold: 0.95
 forecast_horizon_hours: 24
+

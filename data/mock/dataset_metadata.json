@@ -1,0 +1,81 @@
+{
+  "dataset_name": "Delhi Hourly Electricity Demand and Weather Series (2-Year Synthetic)",
+  "data_mode": "DEMONSTRATION / SYNTHETIC",
+  "is_synthetic": true,
+  "version": "2.0.0",
+  "spec_compliance": {
+    "data_mode_requirement": "Strictly flagged as DEMONSTRATION / SYNTHETIC. Must never be passed silently as real.",
+    "time_horizon": "2 Years (731 days / 17,544 continuous hourly intervals)",
+    "date_range": {
+      "start": "2023-01-01 00:00:00",
+      "end": "2024-12-31 23:00:00"
+    }
+  },
+  "characteristics": {
+    "base_daily_pattern": {
+      "winter_night_min_mw": 1980.0,
+      "summer_peak_mw": 8880.0,
+      "nominal_grid_capacity_mw": 9000.0
+    },
+    "summer_daily_peaks": {
+      "peak_1_afternoon": "15:00 - 15:30 (Commercial HVAC, office demand, peak ambient heatwave)",
+      "peak_2_night": "23:00 - 00:00 (Residential bedroom AC cooling during hot nights)"
+    },
+    "winter_daily_profile": {
+      "shape": "Flatter curve with evening heating peak and no afternoon cooling spike",
+      "peak_range_mw": [
+        4000.0,
+        5000.0
+      ],
+      "peak_hours": "18:00 - 21:00 (Space heating, geysers, domestic lighting)"
+    },
+    "seasonal_progression": {
+      "pre_monsoon_ramp_up": "March to June: soaring temperatures induce intense AC cooling demand",
+      "monsoon_dip": "July to September: rain cooling and persistent cloud cover reduce daytime AC demand",
+      "autumn_brief_rise": "October: clear post-monsoon warmth and pre-festive commercial activities",
+      "winter_low": "December to February: lowest baseload and moderate evening heating"
+    },
+    "weekday_vs_weekend": {
+      "saturday_factor": 0.96,
+      "sunday_factor": 0.92,
+      "rationale": "Commercial institutions, schools, and offices observe reduced weekend operations"
+    },
+    "noise_model": {
+      "noise_type": "Autocorrelated Gaussian noise with 3-hour moving average",
+      "amplitude_pct": "2% - 4% of hourly value"
+    },
+    "weather_correlation": {
+      "correlated_series": "temperature_2m",
+      "correlation_coefficient": ">= 0.70",
+      "non_linear_cooling_threshold": "Above 35\u00b0C sharp exponential escalation (hockey-stick curve)"
+    },
+    "discom_distribution": [
+      {
+        "area": "South Delhi",
+        "feeder": "BRPL-South",
+        "share": 0.3
+      },
+      {
+        "area": "North Delhi",
+        "feeder": "TPDDL-North",
+        "share": 0.24
+      },
+      {
+        "area": "West Delhi",
+        "feeder": "BRPL-West",
+        "share": 0.22
+      },
+      {
+        "area": "East Delhi",
+        "feeder": "BYPL-East",
+        "share": 0.16
+      },
+      {
+        "area": "Central Delhi",
+        "feeder": "NDMC-Central",
+        "share": 0.08
+      }
+    ]
+  },
+  "disclaimer": "CRITICAL: This dataset contains SYNTHETIC simulation data designed for offline demonstration, machine learning testing, and system verification. Per system architectural guidelines, synthetic data must never be presented or published as official Delhi SLDC electricity telemetry."
+}

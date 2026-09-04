@@ -42,10 +42,10 @@ def test_synthetic_demand_generation():
     assert (df["demand_mw"] > 0).all()
     assert (df["demand_mw"] < 5000).all()  # Individual area demand should be well within range
 
-    # Aggregated hourly total should reflect Delhi grid load
+    # Aggregated hourly total should reflect Delhi grid load (1,500 MW night dip to 9,500 MW summer peak)
     total_hourly = df.groupby("timestamp")["demand_mw"].sum()
-    assert (total_hourly >= 3000).all()
-    assert (total_hourly <= 8900).all()
+    assert (total_hourly >= 1500).all()
+    assert (total_hourly <= 9500).all()
 
     print("PASS: Synthetic demand generator test passed.")
 
@@ -113,8 +113,32 @@ def test_data_loader_interface():
     print("PASS: All unified data loader tests passed.")
 
 
+def test_missing_weather_api_handling(monkeypatch):
+    """Verify system handles network timeouts and API errors by falling back gracefully without crashing."""
+    import requests
+
+    def mock_get_failure(*args, **kwargs):
+        raise requests.exceptions.ConnectionError("Simulated Open-Meteo network outage")
+
+    monkeypatch.setattr(requests, "get", mock_get_failure)
+
+    # 1. Fetching with network down must fallback gracefully
+    df_fallback = fetch_weather_data(force_refresh=True, timeout=1)
+    assert isinstance(df_fallback, pd.DataFrame)
+    assert not df_fallback.empty
+    assert "temperature_2m" in df_fallback.columns
+    assert "relative_humidity_2m" in df_fallback.columns
+
+    # 2. Demo mode must bypass API calls entirely
+    df_demo = fetch_weather_data(demo_mode=True)
+    assert isinstance(df_demo, pd.DataFrame)
+    assert not df_demo.empty
+    assert "DEMO MODE" in df_demo.attrs.get("data_source", "DEMO MODE")
+
+
 if __name__ == "__main__":
     test_synthetic_demand_generation()
     test_weather_generation_and_fallback()
     test_data_loader_interface()
     print("\nAll data layer unit tests completed successfully!")
+

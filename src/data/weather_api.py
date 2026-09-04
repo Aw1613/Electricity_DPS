@@ -32,7 +32,7 @@ WEATHER_VARIABLES = [
 
 def generate_mock_weather(
     start_date: str = "2023-01-01 00:00:00",
-    end_date: str = "2023-12-31 23:00:00",
+    end_date: str = "2024-12-31 23:00:00",
     output_path: Optional[Path] = None,
     seed: int = 42,
 ) -> pd.DataFrame:
@@ -92,9 +92,10 @@ def generate_mock_weather(
 
     df = pd.DataFrame(records)
 
-    target_path = output_path or MOCK_FILE
-    target_path.parent.mkdir(parents=True, exist_ok=True)
-    df.to_csv(target_path, index=False)
+    if output_path is not None:
+        target_path = Path(output_path)
+        target_path.parent.mkdir(parents=True, exist_ok=True)
+        df.to_csv(target_path, index=False)
     return df
 
 
@@ -152,31 +153,55 @@ def fetch_weather_data(
     end_date: Optional[str] = None,
     cache_path: Optional[Path] = None,
     force_refresh: bool = False,
+    demo_mode: bool = False,
     timeout: int = 6,
 ) -> pd.DataFrame:
-    """Fetch Delhi weather data with caching and fallback.
+    """Fetch Delhi weather data with caching, fallback, and demo mode.
 
-    1. Checks local cache first (unless force_refresh is True).
-    2. Tries fetching fresh data from Open-Meteo API.
-    3. On network or API failure, falls back to cache or generates realistic mock data.
+    1. In demo_mode, bypasses API calls completely and serves mock or cached weather.
+    2. Checks local cache first (unless force_refresh is True).
+    3. Tries fetching fresh data from Open-Meteo API.
+    4. On network or API failure, falls back to cache or generates realistic mock data.
     """
     cache_target = cache_path or CACHE_FILE
+
+    # If in demo mode, strictly bypass network API calls
+    if demo_mode:
+        if MOCK_FILE.exists():
+            df = pd.read_csv(MOCK_FILE)
+            df.attrs["data_source"] = "DEMO MODE (Offline Synthetic)"
+            return df
+        elif cache_target.exists():
+            df = pd.read_csv(cache_target)
+            df.attrs["data_source"] = "DEMO MODE (Offline Cache)"
+            return df
+        else:
+            df = generate_mock_weather(output_path=MOCK_FILE)
+            df.attrs["data_source"] = "DEMO MODE (Generated Offline)"
+            return df
 
     # If cache exists and not forcing refresh, check cache coverage
     if not force_refresh and cache_target.exists():
         try:
             cached_df = pd.read_csv(cache_target)
             if all(col in cached_df.columns for col in ["timestamp"] + WEATHER_VARIABLES):
-                # If date filtering requested, filter cached
                 cached_df["ts"] = pd.to_datetime(cached_df["timestamp"])
+                filtered = cached_df
                 if start_date:
-                    cached_df = cached_df[cached_df["ts"] >= pd.to_datetime(start_date)]
+                    filtered = filtered[filtered["ts"] >= pd.to_datetime(start_date)]
                 if end_date:
-                    cached_df = cached_df[cached_df["ts"] <= pd.to_datetime(end_date)]
-                cached_df = cached_df.drop(columns=["ts"])
+                    filtered = filtered[filtered["ts"] <= pd.to_datetime(end_date)]
+                filtered = filtered.drop(columns=["ts"])
 
-                if len(cached_df) > 0:
-                    return cached_df
+                # If start_date/end_date specified, verify cache has adequate coverage
+                if start_date and end_date:
+                    expected_hours = len(pd.date_range(start_date, end_date, freq="h"))
+                    if len(filtered) >= expected_hours * 0.8:
+                        filtered.attrs["data_source"] = "CACHED WEATHER (Local Fallback)"
+                        return filtered
+                elif len(filtered) > 0:
+                    filtered.attrs["data_source"] = "CACHED WEATHER (Local Fallback)"
+                    return filtered
         except Exception:
             pass  # Fall through to API or fallback
 
@@ -186,27 +211,37 @@ def fetch_weather_data(
         # Save successful fetch to cache
         cache_target.parent.mkdir(parents=True, exist_ok=True)
         df.to_csv(cache_target, index=False)
+        df.attrs["data_source"] = "LIVE DATA (Open-Meteo API)"
         return df
     except Exception as e:
         print(f"Notice: Open-Meteo API unavailable ({e}). Falling back to local cache or mock weather.")
 
-    # Fallback to existing cache file if present
-    if cache_target.exists():
-        try:
-            return pd.read_csv(cache_target)
-        except Exception:
-            pass
-
     # Fallback to mock file or generate mock weather
     if MOCK_FILE.exists():
         try:
-            return pd.read_csv(MOCK_FILE)
+            mock_df = pd.read_csv(MOCK_FILE)
+            if "timestamp" in mock_df.columns and "temperature_2m" in mock_df.columns:
+                mock_df["ts"] = pd.to_datetime(mock_df["timestamp"])
+                filtered = mock_df
+                if start_date:
+                    filtered = filtered[filtered["ts"] >= pd.to_datetime(start_date)]
+                if end_date:
+                    filtered = filtered[filtered["ts"] <= pd.to_datetime(end_date)]
+                filtered = filtered.drop(columns=["ts"])
+                if start_date and end_date:
+                    expected_hours = len(pd.date_range(start_date, end_date, freq="h"))
+                    if len(filtered) >= expected_hours * 0.8:
+                        filtered.attrs["data_source"] = "DEMO MODE (Offline Synthetic)"
+                        return filtered
+                elif len(filtered) > 0:
+                    filtered.attrs["data_source"] = "DEMO MODE (Offline Synthetic)"
+                    return filtered
         except Exception:
             pass
 
     # Final fallback: generate realistic synthetic weather
     s_date = start_date or "2023-01-01 00:00:00"
-    e_date = end_date or "2023-12-31 23:00:00"
+    e_date = end_date or "2024-12-31 23:00:00"
     return generate_mock_weather(start_date=s_date, end_date=e_date, output_path=cache_target)
 
 

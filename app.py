@@ -53,6 +53,7 @@ def load_dashboard_data(
     warning_threshold: float,
     critical_threshold: float,
     solar_capacity_mw: float,
+    demo_mode: bool = False,
 ) -> dict:
     """Fetch complete pre-computed application payload with caching."""
     return get_complete_dashboard_payload(
@@ -60,6 +61,7 @@ def load_dashboard_data(
         warning_threshold=warning_threshold,
         critical_threshold=critical_threshold,
         solar_capacity_mw=solar_capacity_mw,
+        demo_mode=demo_mode,
     )
 
 
@@ -75,6 +77,18 @@ def main():
     # -------------------------------------------------------------
     # SIDEBAR: Interactive System Controls
     # -------------------------------------------------------------
+    st.sidebar.markdown("### 📡 Operational Mode")
+    st.sidebar.info(f"🏷️ **Data Mode:** `{config.DATA_MODE}`")
+    demo_mode = st.sidebar.toggle(
+        "💾 Offline Demo Mode",
+        value=False,
+        help="In Demo Mode, the system bypasses live Open-Meteo API calls and uses local synthetic data & pre-trained models. Guarantees 100% offline functionality.",
+    )
+    if demo_mode:
+        st.sidebar.caption("Mode: Running on local 2-year synthetic datasets.")
+    else:
+        st.sidebar.success("Live Mode Active: Fetching real-time Open-Meteo telemetry.")
+
     st.sidebar.markdown("### ⚙️ Grid Configuration")
     st.sidebar.caption("Adjust parameters dynamically to simulate grid stress & dispatch limits.")
 
@@ -138,6 +152,7 @@ def main():
         warning_threshold=float(warning_threshold),
         critical_threshold=float(critical_threshold),
         solar_capacity_mw=float(solar_capacity),
+        demo_mode=bool(demo_mode),
     )
 
     snapshot = payload["snapshot"]
@@ -162,6 +177,18 @@ def main():
         title="Delhi Electricity Demand Prediction System",
         subtitle="AI-driven short-term load forecasting, peak detection, and grid stability control center.",
         badge_text="DELHI SLDC COMMAND CENTER",
+    )
+
+    # Data Source & Mode Status Badge Bar
+    status_badge = payload.get("data_status_badge", "🟢 LIVE DATA")
+    badge_color = payload.get("badge_color", "#10B981")
+    st.markdown(
+        f"<div style='margin-bottom: 12px; margin-top: -5px;'>"
+        f"<span style='background-color: {badge_color}22; color: {badge_color}; border: 1px solid {badge_color}; "
+        f"padding: 4px 14px; border-radius: 20px; font-weight: 600; font-size: 0.85rem; letter-spacing: 0.03em;'>"
+        f"{status_badge}</span>"
+        f"</div>",
+        unsafe_allow_html=True,
     )
 
     # Dynamic KPI Cards Header

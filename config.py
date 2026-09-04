@@ -8,6 +8,7 @@ BASE_DIR = Path(__file__).resolve().parent
 CONFIG_PATH = BASE_DIR / "config" / "config.yaml"
 
 DEFAULT_CONFIG: Dict[str, Any] = {
+    "data_mode": "DEMONSTRATION / SYNTHETIC",
     "grid_capacity_mw": 9000,
     "warning_threshold": 0.85,
     "critical_threshold": 0.95,
@@ -60,6 +61,7 @@ def load_config(config_path: Path = CONFIG_PATH) -> Dict[str, Any]:
 CONFIG = load_config()
 
 # Convenience exports
+DATA_MODE = CONFIG.get("data_mode", "DEMONSTRATION / SYNTHETIC")
 GRID_CAPACITY_MW = CONFIG["grid_capacity_mw"]
 WARNING_THRESHOLD = CONFIG["warning_threshold"]
 CRITICAL_THRESHOLD = CONFIG["critical_threshold"]

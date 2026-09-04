@@ -36,9 +36,10 @@ PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 def get_historical_demand_service(
     limit_hours: Optional[int] = None,
     filepath: Optional[Union[str, Path]] = None,
+    demo_mode: bool = False,
 ) -> pd.DataFrame:
     """Retrieve and format historical demand series."""
-    df = load_historical_demand(filepath=filepath)
+    df = load_historical_demand(filepath=filepath, demo_mode=demo_mode)
     if limit_hours is not None and len(df) > limit_hours:
         df = df.iloc[-limit_hours:].reset_index(drop=True)
     return df
@@ -47,9 +48,10 @@ def get_historical_demand_service(
 def get_weather_service(
     start_date: Optional[str] = None,
     end_date: Optional[str] = None,
+    demo_mode: bool = False,
 ) -> pd.DataFrame:
     """Retrieve formatted weather history and current conditions."""
-    return load_weather(start_date=start_date, end_date=end_date)
+    return load_weather(start_date=start_date, end_date=end_date, demo_mode=demo_mode)
 
 
 def get_model_info_service(model_path: Optional[Union[str, Path]] = None) -> Dict[str, Any]:
@@ -78,9 +80,10 @@ def get_current_grid_snapshot_service(
     capacity_mw: Optional[float] = None,
     warning_threshold: Optional[float] = None,
     critical_threshold: Optional[float] = None,
+    demo_mode: bool = False,
 ) -> Dict[str, Any]:
     """Fetch real-time / latest available grid operational snapshot."""
-    history_df = load_historical_demand()
+    history_df = load_historical_demand(demo_mode=demo_mode)
     latest_row = history_df.iloc[-1]
     current_demand = float(latest_row["demand_mw"])
     current_ts = str(latest_row["timestamp"])
@@ -93,21 +96,27 @@ def get_current_grid_snapshot_service(
         context_timestamp=current_ts,
     )
 
-    # Latest weather if available
+    # Weather telemetry
     try:
-        weather_df = load_weather()
+        weather_df = load_weather(demo_mode=demo_mode)
         latest_weather = weather_df.iloc[-1]
         current_temp = float(latest_weather.get("temperature_2m", latest_weather.get("temperature", 32.0)))
         current_humidity = float(latest_weather.get("relative_humidity_2m", latest_weather.get("humidity", 50.0)))
+        weather_source = getattr(weather_df, "attrs", {}).get(
+            "data_source", "DEMO MODE (Offline Synthetic)" if demo_mode else "LIVE DATA (Open-Meteo)"
+        )
     except Exception:
         current_temp = 32.5
         current_humidity = 48.0
+        weather_source = "DEMO MODE (Offline Fallback)"
 
     return {
         "timestamp": current_ts,
         "current_demand_mw": current_demand,
         "current_temperature_c": current_temp,
         "current_humidity_pct": current_humidity,
+        "weather_source": weather_source,
+        "demo_mode": demo_mode,
         "alert": alert,
     }
 
@@ -117,10 +126,18 @@ def generate_24h_forecast_service(
     warning_threshold: Optional[float] = None,
     critical_threshold: Optional[float] = None,
     model_path: Optional[Union[str, Path]] = None,
+    demo_mode: bool = False,
 ) -> Dict[str, Any]:
     """Unified service for 24-hour demand forecasting, peak detection, and alert evaluation."""
+    weather_forecast_df = load_weather(demo_mode=demo_mode) if demo_mode else None
+    history_df = load_historical_demand(demo_mode=demo_mode) if demo_mode else None
+
     # 1. Generate 24-hour raw predictions
-    raw_forecast_df = predict_next_24h(model_path=model_path)
+    raw_forecast_df = predict_next_24h(
+        historical_df=history_df,
+        weather_forecast_df=weather_forecast_df,
+        model_path=model_path,
+    )
 
     # 2. Add uncertainty bands
     forecast_df = add_uncertainty_bounds(raw_forecast_df, model_path=model_path)
@@ -145,6 +162,7 @@ def generate_24h_forecast_service(
     return {
         "horizon": "24h",
         "generated_at": datetime.now().isoformat(),
+        "demo_mode": demo_mode,
         "forecast_df": alert_summary["annotated_forecast_df"],
         "peak_analysis": peak_analysis,
         "alert_summary": alert_summary,
@@ -161,10 +179,18 @@ def generate_7d_forecast_service(
     warning_threshold: Optional[float] = None,
     critical_threshold: Optional[float] = None,
     model_path: Optional[Union[str, Path]] = None,
+    demo_mode: bool = False,
 ) -> Dict[str, Any]:
     """Unified service for 7-day (168-hour) multi-step recursive forecasting and daily aggregates."""
+    weather_forecast_df = load_weather(demo_mode=demo_mode) if demo_mode else None
+    history_df = load_historical_demand(demo_mode=demo_mode) if demo_mode else None
+
     # 1. Generate 168-hour recursive predictions
-    raw_forecast_7d = predict_next_7d(model_path=model_path)
+    raw_forecast_7d = predict_next_7d(
+        historical_df=history_df,
+        weather_forecast_df=weather_forecast_df,
+        model_path=model_path,
+    )
 
     # 2. Add uncertainty intervals
     forecast_7d = add_uncertainty_bounds(raw_forecast_7d, model_path=model_path)
@@ -192,6 +218,7 @@ def generate_7d_forecast_service(
     return {
         "horizon": "7d",
         "generated_at": datetime.now().isoformat(),
+        "demo_mode": demo_mode,
         "forecast_df": alert_summary_7d["annotated_forecast_df"],
         "daily_summary_df": daily_summary_df,
         "peak_analysis": peak_analysis_7d,
@@ -246,18 +273,21 @@ def get_complete_dashboard_payload(
     warning_threshold: Optional[float] = None,
     critical_threshold: Optional[float] = None,
     solar_capacity_mw: float = 450.0,
+    demo_mode: bool = False,
 ) -> Dict[str, Any]:
     """Master service compiling complete application state for Streamlit dashboard rendering."""
     grid_snapshot = get_current_grid_snapshot_service(
         capacity_mw=capacity_mw,
         warning_threshold=warning_threshold,
         critical_threshold=critical_threshold,
+        demo_mode=demo_mode,
     )
 
     forecast_24h = generate_24h_forecast_service(
         capacity_mw=capacity_mw,
         warning_threshold=warning_threshold,
         critical_threshold=critical_threshold,
+        demo_mode=demo_mode,
     )
 
     # Augment 24h forecast with net demand
@@ -270,6 +300,7 @@ def get_complete_dashboard_payload(
         capacity_mw=capacity_mw,
         warning_threshold=warning_threshold,
         critical_threshold=critical_threshold,
+        demo_mode=demo_mode,
     )
 
     model_info = get_model_info_service()
@@ -284,7 +315,20 @@ def get_complete_dashboard_payload(
     )
 
     # Recent historical slice (last 48 hours for overlay display)
-    history_48h = get_historical_demand_service(limit_hours=48)
+    history_48h = get_historical_demand_service(limit_hours=48, demo_mode=demo_mode)
+
+    # Determine status badge text
+    if demo_mode:
+        data_status_badge = "💾 DEMO MODE (Offline Synthetic)"
+        badge_color = "#3B82F6"
+    else:
+        weather_src = grid_snapshot.get("weather_source", "")
+        if "Open-Meteo" in weather_src:
+            data_status_badge = "🟢 LIVE DATA (Open-Meteo Telemetry)"
+            badge_color = "#10B981"
+        else:
+            data_status_badge = "🟡 CACHED WEATHER (Local Fallback)"
+            badge_color = "#F59E0B"
 
     return {
         "snapshot": grid_snapshot,
@@ -294,6 +338,9 @@ def get_complete_dashboard_payload(
         "area_analysis": area_analysis,
         "renewable_analysis": renewable_analysis,
         "history_48h": history_48h,
+        "demo_mode": demo_mode,
+        "data_status_badge": data_status_badge,
+        "badge_color": badge_color,
     }
 
 
