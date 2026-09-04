@@ -23,6 +23,8 @@ from src.data.data_loader import (
     load_weather,
 )
 from src.features.build_features import get_feature_columns
+from src.features.area_analysis import get_area_demand_summary, calculate_zone_proportions
+from src.features.renewables import adjust_forecast_for_renewables, get_renewable_summary
 from src.forecast.analyze import add_uncertainty_bounds, detect_peaks, get_top_peaks
 from src.forecast.predict_24h import predict_next_24h
 from src.forecast.predict_7d import aggregate_daily_forecast, predict_next_7d
@@ -203,10 +205,47 @@ def generate_7d_forecast_service(
     }
 
 
+def get_area_analysis_service(total_demand_mw: Optional[float] = None) -> Dict[str, Any]:
+    """Provide geographic zone distribution, feeder rankings, and load proportions."""
+    area_summary_df = get_area_demand_summary()
+    target_demand = total_demand_mw if total_demand_mw is not None else float(area_summary_df["peak_demand_mw"].sum())
+    proportions_df = calculate_zone_proportions(total_demand_mw=target_demand)
+
+    return {
+        "area_summary_df": area_summary_df,
+        "proportions_df": proportions_df,
+        "total_demand_mw": target_demand,
+        "is_demonstration_data": bool(area_summary_df["is_demonstration_data"].iloc[0]) if "is_demonstration_data" in area_summary_df.columns else False,
+    }
+
+
+def get_renewables_analysis_service(
+    forecast_df: Optional[pd.DataFrame] = None,
+    installed_solar_capacity_mw: float = 450.0,
+) -> Dict[str, Any]:
+    """Provide net demand calculations and solar offset analytics."""
+    ren_summary = get_renewable_summary()
+
+    adjusted_forecast_df = None
+    if forecast_df is not None and not forecast_df.empty:
+        adjusted_forecast_df = adjust_forecast_for_renewables(
+            forecast_df=forecast_df,
+            installed_solar_capacity_mw=installed_solar_capacity_mw,
+        )
+
+    return {
+        "summary": ren_summary,
+        "is_available": ren_summary["is_available"],
+        "installed_solar_capacity_mw": installed_solar_capacity_mw,
+        "adjusted_forecast_df": adjusted_forecast_df,
+    }
+
+
 def get_complete_dashboard_payload(
     capacity_mw: Optional[float] = None,
     warning_threshold: Optional[float] = None,
     critical_threshold: Optional[float] = None,
+    solar_capacity_mw: float = 450.0,
 ) -> Dict[str, Any]:
     """Master service compiling complete application state for Streamlit dashboard rendering."""
     grid_snapshot = get_current_grid_snapshot_service(
@@ -221,6 +260,12 @@ def get_complete_dashboard_payload(
         critical_threshold=critical_threshold,
     )
 
+    # Augment 24h forecast with net demand
+    forecast_24h["forecast_df"] = adjust_forecast_for_renewables(
+        forecast_24h["forecast_df"],
+        installed_solar_capacity_mw=solar_capacity_mw,
+    )
+
     forecast_7d = generate_7d_forecast_service(
         capacity_mw=capacity_mw,
         warning_threshold=warning_threshold,
@@ -228,6 +273,15 @@ def get_complete_dashboard_payload(
     )
 
     model_info = get_model_info_service()
+
+    # Area analysis for current load
+    area_analysis = get_area_analysis_service(total_demand_mw=grid_snapshot["current_demand_mw"])
+
+    # Renewable analysis
+    renewable_analysis = get_renewables_analysis_service(
+        forecast_df=forecast_24h["forecast_df"],
+        installed_solar_capacity_mw=solar_capacity_mw,
+    )
 
     # Recent historical slice (last 48 hours for overlay display)
     history_48h = get_historical_demand_service(limit_hours=48)
@@ -237,6 +291,8 @@ def get_complete_dashboard_payload(
         "forecast_24h": forecast_24h,
         "forecast_7d": forecast_7d,
         "model_info": model_info,
+        "area_analysis": area_analysis,
+        "renewable_analysis": renewable_analysis,
         "history_48h": history_48h,
     }
 
