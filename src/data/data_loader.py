@@ -44,6 +44,8 @@ def load_historical_demand(
         target_path = RAW_DIR / "load.csv"
     elif (RAW_DIR / "historical_demand.csv").exists():
         target_path = RAW_DIR / "historical_demand.csv"
+    elif (RAW_DIR / "powerdemand_5min_2021_to_2024_with weather.csv").exists():
+        target_path = RAW_DIR / "powerdemand_5min_2021_to_2024_with weather.csv"
     elif (MOCK_DIR / "synthetic_demand.csv").exists():
         target_path = MOCK_DIR / "synthetic_demand.csv"
     else:
@@ -67,7 +69,7 @@ def load_historical_demand(
 
     # Handle demand column variations
     demand_col = None
-    for col in ["demand_mw", "total_demand_mw", "load_mw", "demand", "load"]:
+    for col in ["demand_mw", "total_demand_mw", "load_mw", "demand", "load", "power demand", "power_demand", "power"]:
         if col in df.columns:
             demand_col = col
             break
@@ -88,6 +90,14 @@ def load_historical_demand(
         )
     else:
         df = df.sort_values("timestamp").reset_index(drop=True)
+
+    # Automatically resample sub-hourly data (e.g. 5-min intervals) to hourly mean
+    if len(df) > 1:
+        time_diffs = df["timestamp"].diff().dropna()
+        if not time_diffs.empty and time_diffs.median() < pd.Timedelta(hours=1):
+            numeric_cols = [c for c in df.columns if c != "timestamp" and pd.api.types.is_numeric_dtype(df[c])]
+            df_resampled = df.set_index("timestamp")[numeric_cols].resample("1h").mean()
+            df = df_resampled.interpolate(method="linear").ffill().bfill().reset_index()
 
     return df
 

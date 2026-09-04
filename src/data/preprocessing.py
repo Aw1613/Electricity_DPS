@@ -126,6 +126,11 @@ def align_demand_and_weather(
     d_clean = clean_and_resample_hourly(demand_df)
     w_clean = clean_and_resample_hourly(weather_df)
 
+    # Avoid duplicate column collisions if demand_df already has weather columns
+    overlap_cols = [c for c in w_clean.columns if c != "timestamp" and c in d_clean.columns]
+    if overlap_cols:
+        w_clean = w_clean.drop(columns=overlap_cols)
+
     # Merge on timestamp
     merged = pd.merge(d_clean, w_clean, on="timestamp", how="inner")
 

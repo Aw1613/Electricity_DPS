@@ -47,6 +47,5 @@ Thumbs.db
 
 # Large model artifacts (keep directory, ignore bulky weights if needed later)
 !models/.gitkeep
-!data/raw/.gitkeep
-!data/processed/.gitkeep
-!data/mock/.gitkeep
+# Large datasets
+data/raw/*5min*
