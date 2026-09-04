@@ -26,10 +26,10 @@ THEME_COLORS = {
     "capacity": "#EF4444",       # Red
     "warning": "#F59E0B",        # Amber
     "normal": "#10B981",         # Green
-    "dark_bg": "#111827",
-    "card_bg": "#1F2937",
-    "grid_line": "#374151",
-    "text": "#F3F4F6",
+    "dark_bg": "#000000",
+    "card_bg": "#050505",
+    "grid_line": "rgba(255, 255, 255, 0.08)",
+    "text": "#D8D8D8",
 }
 
 
@@ -138,12 +138,15 @@ def plot_actual_vs_predicted(
         )
 
     fig.update_layout(
-        title=dict(text=title, font=dict(size=16)),
-        xaxis=dict(title="Timeline", gridcolor="#E5E7EB"),
-        yaxis=dict(title="Electricity Demand (MW)", gridcolor="#E5E7EB"),
+        title=dict(text=title, font=dict(family="'Inter', sans-serif", size=16, color="#FFFFFF")),
+        paper_bgcolor="#000000",
+        plot_bgcolor="#050505",
+        font=dict(family="'Inter', sans-serif", color="#D8D8D8"),
+        xaxis=dict(title="Timeline", gridcolor="rgba(255, 255, 255, 0.08)", zerolinecolor="rgba(255, 255, 255, 0.12)"),
+        yaxis=dict(title="Electricity Demand (MW)", gridcolor="rgba(255, 255, 255, 0.08)", zerolinecolor="rgba(255, 255, 255, 0.12)"),
         hovermode="x unified",
-        template="plotly_white",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
+        template="plotly_dark",
+        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1, font=dict(color="#D8D8D8")),
         margin=dict(l=50, r=40, t=60, b=40),
         height=440,
     )
@@ -211,10 +214,13 @@ def plot_7d_forecast_trend(
 
     fig.update_layout(
         title=dict(text="7-Day Electricity Demand Forecast (168-Hour Horizon)", font=dict(size=16)),
-        xaxis=dict(title="Date & Time", gridcolor="#E5E7EB"),
-        yaxis=dict(title="Demand (MW)", gridcolor="#E5E7EB"),
+        xaxis=dict(title="Date & Time", gridcolor="rgba(255, 255, 255, 0.08)"),
+        yaxis=dict(title="Demand (MW)", gridcolor="rgba(255, 255, 255, 0.08)"),
         hovermode="x unified",
-        template="plotly_white",
+        template="plotly_dark",
+        paper_bgcolor="#000000",
+        plot_bgcolor="#050505",
+        font=dict(family="'Inter', sans-serif", color="#D8D8D8"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         margin=dict(l=50, r=40, t=60, b=40),
         height=440,
@@ -287,9 +293,12 @@ def plot_temperature_vs_demand(
 
     fig.update_layout(
         title=dict(text="Weather Correlation: Ambient Temperature vs. Electricity Demand", font=dict(size=16)),
-        xaxis=dict(title="Ambient Temperature (°C)", gridcolor="#E5E7EB"),
-        yaxis=dict(title="Electricity Demand (MW)", gridcolor="#E5E7EB"),
-        template="plotly_white",
+        xaxis=dict(title="Ambient Temperature (°C)", gridcolor="rgba(255, 255, 255, 0.08)"),
+        yaxis=dict(title="Electricity Demand (MW)", gridcolor="rgba(255, 255, 255, 0.08)"),
+        template="plotly_dark",
+        paper_bgcolor="#000000",
+        plot_bgcolor="#050505",
+        font=dict(family="'Inter', sans-serif", color="#D8D8D8"),
         margin=dict(l=50, r=40, t=60, b=40),
         height=420,
     )
@@ -343,7 +352,10 @@ def plot_capacity_gauge(
     )
 
     fig.update_layout(
-        template="plotly_white",
+        template="plotly_dark",
+        paper_bgcolor="#000000",
+        plot_bgcolor="#050505",
+        font=dict(family="'Inter', sans-serif", color="#D8D8D8"),
         margin=dict(l=30, r=30, t=60, b=20),
         height=320,
     )
@@ -378,9 +390,12 @@ def plot_area_breakdown_bars(area_summary_df: pd.DataFrame) -> go.Figure:
 
     fig.update_layout(
         title=dict(text="Geographic Demand by Delhi Zone (Ranked by Peak Load)", font=dict(size=15)),
-        xaxis=dict(title="Peak Demand (MW)", gridcolor="#E5E7EB"),
+        xaxis=dict(title="Peak Demand (MW)", gridcolor="rgba(255, 255, 255, 0.08)"),
         yaxis=dict(title=""),
-        template="plotly_white",
+        template="plotly_dark",
+        paper_bgcolor="#000000",
+        plot_bgcolor="#050505",
+        font=dict(family="'Inter', sans-serif", color="#D8D8D8"),
         margin=dict(l=100, r=40, t=50, b=40),
         height=340,
     )
@@ -408,7 +423,10 @@ def plot_area_breakdown_pie(area_summary_df: pd.DataFrame) -> go.Figure:
 
     fig.update_layout(
         title=dict(text="Zonal Demand Distribution Share (%)", font=dict(size=15)),
-        template="plotly_white",
+        template="plotly_dark",
+        paper_bgcolor="#000000",
+        plot_bgcolor="#050505",
+        font=dict(family="'Inter', sans-serif", color="#D8D8D8"),
         margin=dict(l=20, r=20, t=50, b=20),
         height=340,
     )
@@ -467,10 +485,13 @@ def plot_renewable_net_demand_chart(forecast_df: pd.DataFrame) -> go.Figure:
 
     fig.update_layout(
         title=dict(text="Renewable Shaving: Gross Load vs. Solar Generation vs. Net Demand", font=dict(size=16)),
-        xaxis=dict(title="Timeline", gridcolor="#E5E7EB"),
-        yaxis=dict(title="Power (MW)", gridcolor="#E5E7EB"),
+        xaxis=dict(title="Timeline", gridcolor="rgba(255, 255, 255, 0.08)"),
+        yaxis=dict(title="Power (MW)", gridcolor="rgba(255, 255, 255, 0.08)"),
         hovermode="x unified",
-        template="plotly_white",
+        template="plotly_dark",
+        paper_bgcolor="#000000",
+        plot_bgcolor="#050505",
+        font=dict(family="'Inter', sans-serif", color="#D8D8D8"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1),
         margin=dict(l=50, r=40, t=60, b=40),
         height=420,
@@ -503,9 +524,12 @@ def plot_hourly_alert_timeline(forecast_df: pd.DataFrame) -> go.Figure:
 
     fig.update_layout(
         title=dict(text="Hourly Grid Alert Classification Timeline", font=dict(size=15)),
-        xaxis=dict(title="Time", gridcolor="#E5E7EB"),
-        yaxis=dict(title="Demand (MW)", gridcolor="#E5E7EB"),
-        template="plotly_white",
+        xaxis=dict(title="Time", gridcolor="rgba(255, 255, 255, 0.08)"),
+        yaxis=dict(title="Demand (MW)", gridcolor="rgba(255, 255, 255, 0.08)"),
+        template="plotly_dark",
+        paper_bgcolor="#000000",
+        plot_bgcolor="#050505",
+        font=dict(family="'Inter', sans-serif", color="#D8D8D8"),
         margin=dict(l=50, r=40, t=50, b=40),
         height=320,
     )
