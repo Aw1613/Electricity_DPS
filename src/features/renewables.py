@@ -86,6 +86,20 @@ def calculate_net_demand(
     ren_df["timestamp_dt"] = pd.to_datetime(ren_df["timestamp"])
     ren_df = ren_df.sort_values("timestamp_dt")
 
+    # Ensure existing renewable columns are dropped if re-calculating
+    out = out.drop(
+        columns=[
+            "solar_generation_mw",
+            "renewable_generation_mw",
+            "net_demand_mw",
+            "solar_contribution_pct",
+            "renewable_contribution_pct",
+            "is_renewable_available",
+            "renewable_status",
+        ],
+        errors="ignore",
+    )
+
     # Merge on timestamp
     merged = pd.merge_asof(
         out.sort_values("timestamp_dt"),
