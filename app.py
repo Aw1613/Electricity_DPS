@@ -179,35 +179,19 @@ def main():
     # 1. EXECUTIVE SINGLE-VIEWPORT LANDING PAGE VIEW
     # =============================================================
     if active_view == "landing":
-        index_file = os.path.join(os.path.dirname(__file__), "index.html")
-        if os.path.exists(index_file):
-            with open(index_file, "r", encoding="utf-8") as f:
+        snippet_file = os.path.join(os.path.dirname(__file__), "landing_snippet.html")
+        if os.path.exists(snippet_file):
+            with open(snippet_file, "r", encoding="utf-8") as f:
                 landing_html = f.read()
-
-            # Clean full-bleed landing styling: eliminate Streamlit padding, header, and sidebar
-            landing_wrapper_css = """
-            <style>
-            [data-testid="stSidebar"] { display: none !important; }
-            [data-testid="stHeader"] { display: none !important; }
-            [data-testid="stToolbar"] { display: none !important; }
-            footer { display: none !important; }
-            #MainMenu { display: none !important; }
-            header { display: none !important; }
-            .main, [data-testid="stAppViewContainer"], [data-testid="stMainBlockContainer"], .block-container {
-                padding: 0 !important;
-                margin: 0 !important;
-                max-width: 100vw !important;
-                width: 100vw !important;
-                height: 100vh !important;
-                max-height: 100vh !important;
-                overflow: hidden !important;
-                background: #000000 !important;
-            }
-            </style>
-            """
-            st.markdown(landing_wrapper_css + landing_html, unsafe_allow_html=True)
+            st.html(landing_html)
         else:
-            st.error("index.html landing page file not found.")
+            index_file = os.path.join(os.path.dirname(__file__), "index.html")
+            if os.path.exists(index_file):
+                with open(index_file, "r", encoding="utf-8") as f:
+                    landing_html = f.read()
+                st.html(landing_html)
+            else:
+                st.error("Landing page file not found.")
         return
 
     # =============================================================
