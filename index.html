@@ -305,6 +305,12 @@ button {
   border-radius: 50%;
   background: #10B981;
   box-shadow: 0 0 8px #10B981;
+  animation: pulseGlow 2s infinite ease-in-out;
+}
+@keyframes pulseGlow {
+  0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); transform: scale(0.95); }
+  70% { box-shadow: 0 0 0 7px rgba(16, 185, 129, 0); transform: scale(1.15); }
+  100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); transform: scale(0.95); }
 }
 
 .hero-title {
@@ -1006,7 +1012,10 @@ button {
             <text x="290" y="152" fill="#6b7280" font-size="8.5" font-family="sans-serif">23:00</text>
 
             <!-- Peak Marker Diamond & Pulse -->
-            <circle cx="215" cy="32" r="8" fill="rgba(250,204,21,0.2)"/>
+            <circle cx="215" cy="32" r="8" fill="rgba(250,204,21,0.25)">
+              <animate attributeName="r" values="6;13;6" dur="2.4s" repeatCount="indefinite"/>
+              <animate attributeName="opacity" values="0.7;0.1;0.7" dur="2.4s" repeatCount="indefinite"/>
+            </circle>
             <polygon points="215,26 221,32 215,38 209,32" fill="#FACC15" stroke="#FFFFFF" stroke-width="1.5"/>
 
             <!-- Callout Pill -->
