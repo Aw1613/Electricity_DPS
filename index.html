@@ -5,1238 +5,1207 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
   <title>Vidyut.ai — Operational Grid AI Infrastructure</title>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white'%3E%3Cg transform='rotate(-30 12 12)'%3E%3Ccircle cx='7.3' cy='3.2' r='1.45'/%3E%3Crect x='5.5' y='4.7' width='3.6' height='14.6' rx='1.8'/%3E%3Crect x='14.9' y='4.7' width='3.6' height='14.6' rx='1.8'/%3E%3Ccircle cx='16.7' cy='20.8' r='1.45'/%3E%3C/g%3E%3C/svg%3E">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=Instrument+Serif:ital@1&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
-  <style>
-    /* Immediate black background */
-    html, body { background: #000000 !important; color: #ffffff; }
-    html, body {
-      background: #000000;
-      background: var(--bg, #000000);
-      color: #ffffff;
-      color: var(--text, #ffffff);
-    }
-
-    /* Streamlit full-bleed reset on landing */
-    [data-testid="stSidebar"] { display: none !important; }
-    [data-testid="stHeader"] { display: none !important; }
-    [data-testid="stToolbar"] { display: none !important; }
-    footer { display: none !important; }
-    #MainMenu { display: none !important; }
-    header { display: none !important; }
-    .main, [data-testid="stAppViewContainer"], [data-testid="stMainBlockContainer"], .block-container {
-        padding: 0 !important;
-        margin: 0 !important;
-        max-width: 100vw !important;
-        width: 100vw !important;
-        height: auto !important;
-        min-height: 100vh !important;
-        overflow-y: auto !important;
-        overflow-x: hidden !important;
-        background: #000000 !important;
-    }
-
-    :root {
-      --bg: #000000;
-      --text: #ffffff;
-      --primary-cream: #DEDBC8;
-      --text-cream: #E1E0CC;
-      --card-about: #101010;
-      --card-features: #212121;
-      --gray-400: #9ca3af;
-      --gray-500: #6b7280;
-      --muted: #9a9a9a;
-      --stat: #d8d8d8;
-      --border: rgba(255, 255, 255, 0.16);
-      --border-soft: rgba(255, 255, 255, 0.12);
-      --border-cream: rgba(225, 224, 204, 0.15);
-
-      --logo: 15.5px;
-      --logo-mark: 22px;
-      --nav: 14px;
-      --nav-h: 40px;
-      --btn: 13.5px;
-      --btn-h: 40px;
-      --hero-btn-h: 42px;
-      --h1: 48px;
-      --lede: 15.5px;
-      --badge: 12.5px;
-      --stat-size: 13.5px;
-      --header-y: 22px;
-      --header-x: 40px;
-      --stats-x: 72px;
-      --stats-y: 36px;
-      --hero-gap: 85px;
-      --copy-max: 860px;
-      --lede-max: 520px;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    html {
-      scroll-behavior: smooth;
-    }
-
-    body {
-      font-family: 'Almarai', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-      -webkit-font-smoothing: antialiased;
-      -moz-osx-font-smoothing: grayscale;
-      text-rendering: optimizeLegibility;
-      overflow-x: hidden;
-      overflow-y: auto;
-      position: relative;
-      background: #000000;
-    }
-
-    a {
-      color: inherit;
-      text-decoration: none;
-    }
-
-    button {
-      font-family: inherit;
-      cursor: pointer;
-      border: none;
-      background: none;
-    }
-
-    /* Grain & Noise Overlay Utilities */
-    .noise-overlay {
-      position: absolute;
-      inset: 0;
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.7'/%3E%3C/svg%3E");
-      mix-blend-mode: overlay;
-      pointer-events: none;
-      z-index: 2;
-    }
-
-    .bg-noise {
-      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise2)' opacity='0.15'/%3E%3C/svg%3E");
-      pointer-events: none;
-    }
-
-    /* ============================================================
-       SECTION 1: HERO TOP SCREEN (100vh Single Viewport Initial)
-       ============================================================ */
-    .hero-viewport {
-      position: relative;
-      width: 100%;
-      height: 100vh;
-      min-height: 100vh;
-      display: grid;
-      grid-template-rows: auto 1fr auto;
-      overflow: hidden;
-      background: #000000;
-    }
-
-    .hero-photo {
-      position: absolute;
-      inset: 0;
-      z-index: 0;
-      overflow: hidden;
-      pointer-events: none;
-      background: #000000;
-    }
-    .hero-video {
-      position: absolute;
-      top: 50%;
-      left: 50%;
-      min-width: 100%;
-      min-height: 100%;
-      width: auto;
-      height: auto;
-      transform: translate(-50%, -50%);
-      object-fit: cover;
-      opacity: 1;
-    }
-    .hero-photo::after {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.6) 70%, #000000 100%);
-      pointer-events: none;
-    }
-
-    /* Header */
-    header.header {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      padding: var(--header-y) var(--header-x) 10px;
-      z-index: 50;
-      position: relative;
-    }
-
-    .logo {
-      display: inline-flex;
-      align-items: center;
-      gap: 9px;
-      justify-self: start;
-      font-size: var(--logo);
-      font-weight: 700;
-      letter-spacing: -0.03em;
-      color: #fff;
-    }
-    .logo-suffix {
-      font-weight: 400;
-      color: var(--primary-cream);
-      opacity: 0.7;
-    }
-
-    #site-nav {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      justify-self: center;
-    }
-
-    .nav-pill {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: var(--nav-h);
-      padding: 0 18px;
-      border-radius: 7px;
-      overflow: hidden;
-      position: relative;
-      border: 1px solid rgba(198, 198, 198, 0.55);
-      background: linear-gradient(105deg, #050505 0%, #2a2a2a 48%, #4a4a4a 100%);
-      color: #f3f3f3;
-      font-size: var(--nav);
-      font-weight: 400;
-      letter-spacing: -0.01em;
-      white-space: nowrap;
-      transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
-    }
-
-    .nav-pill::before {
-      content: "";
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.16) 50%, transparent 70%);
-      transform: translateX(-120%);
-      transition: transform 0.6s ease;
-    }
-
-    .nav-pill:hover {
-      border-color: var(--primary-cream);
-      background: linear-gradient(105deg, #111111 0%, #3a3a3a 45%, #6a6a6a 100%);
-      box-shadow: 0 0 18px rgba(222, 219, 200, 0.2);
-      color: #ffffff;
-    }
-
-    .nav-pill:hover::before {
-      transform: translateX(120%);
-    }
-
-    .header-cta {
-      justify-self: end;
-    }
-
-    .btn {
-      position: relative;
-      isolation: isolate;
-      overflow: hidden;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      height: var(--btn-h);
-      padding: 0 18px;
-      border-radius: 9999px;
-      font-size: var(--btn);
-      font-weight: 600;
-      letter-spacing: -0.02em;
-      line-height: 1;
-      white-space: nowrap;
-      cursor: pointer;
-      transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease, color 0.35s ease, transform 0.2s ease;
-    }
-
-    .btn-cream {
-      background: var(--primary-cream);
-      color: #000000;
-      border: 1px solid #ffffff;
-    }
-    .btn-cream:hover {
-      background: #ffffff;
-      transform: translateY(-1px);
-      box-shadow: 0 4px 20px rgba(222, 219, 200, 0.35);
-    }
-
-    .btn-ghost {
-      background: rgba(255, 255, 255, 0.06);
-      border: 1px solid rgba(255, 255, 255, 0.18);
-      color: #ffffff;
-    }
-    .btn-ghost:hover {
-      background: rgba(255, 255, 255, 0.12);
-      border-color: var(--primary-cream);
-      color: var(--primary-cream);
-    }
-
-    .btn-arrow-circle {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      width: 24px;
-      height: 24px;
-      background: #000000;
-      border-radius: 50%;
-      margin-left: 8px;
-      transition: transform 0.25s ease;
-    }
-    .btn:hover .btn-arrow-circle {
-      transform: scale(1.15) rotate(-45deg);
-    }
-
-    /* Hero main */
-    main.hero {
-      position: relative;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      text-align: center;
-      padding: 0 24px;
-      max-width: var(--copy-max);
-      margin: 0 auto;
-    }
-
-    .badge {
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      height: 28px;
-      padding: 0 14px;
-      border-radius: 14px;
-      font-size: var(--badge);
-      font-weight: 500;
-      color: var(--primary-cream);
-      background: rgba(222, 219, 200, 0.08);
-      border: 1px solid rgba(222, 219, 200, 0.25);
-      margin-bottom: 22px;
-      letter-spacing: 0.04em;
-      text-transform: uppercase;
-    }
-    .badge-dot {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      background: #10B981;
-      box-shadow: 0 0 8px #10B981;
-    }
-
-    .hero-title {
-      font-size: clamp(34px, 5.2vw, 56px);
-      font-weight: 800;
-      line-height: 1.08;
-      letter-spacing: -0.035em;
-      color: #ffffff;
-      margin-bottom: 18px;
-      text-wrap: balance;
-    }
-    .hero-title span.italic-serif {
-      font-family: 'Instrument Serif', Georgia, serif;
-      font-style: italic;
-      font-weight: 400;
-      color: var(--primary-cream);
-    }
-
-    .hero-lede {
-      font-size: clamp(15px, 1.8vw, 17px);
-      line-height: 1.55;
-      color: var(--gray-400);
-      max-width: 640px;
-      margin-bottom: 34px;
-      text-wrap: balance;
-    }
-
-    .hero-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-
-    /* Hero Stats Footer */
-    footer.stats {
-      position: relative;
-      z-index: 10;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 20px var(--stats-x) 32px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
-    }
-
-    .stat-item {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      font-size: 13.5px;
-      color: var(--stat);
-    }
-    .stat-bullet {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-      background: var(--primary-cream);
-      box-shadow: 0 0 10px rgba(222, 219, 200, 0.4);
-    }
-
-    /* Scroll Down Indicator */
-    .scroll-indicator {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 12px;
-      color: var(--primary-cream);
-      opacity: 0.75;
-      margin-top: 18px;
-      cursor: pointer;
-      transition: opacity 0.2s, transform 0.2s;
-    }
-    .scroll-indicator:hover {
-      opacity: 1;
-      transform: translateY(2px);
-    }
-
-    /* ============================================================
-       SECTION 2: ABOUT SECTION (Dark, Moody, Cinematic #101010 Card)
-       ============================================================ */
-    .section-about {
-      background: #000000;
-      padding: 110px 24px;
-      position: relative;
-      z-index: 20;
-    }
-
-    .about-card {
-      background: var(--card-about);
-      border: 1px solid var(--border-cream);
-      border-radius: 32px;
-      max-width: 1140px;
-      margin: 0 auto;
-      padding: 70px 48px;
-      position: relative;
-      overflow: hidden;
-      box-shadow: 0 20px 80px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08);
-      text-align: center;
-    }
-
-    .about-label {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.22em;
-      text-transform: uppercase;
-      color: var(--primary-cream);
-      margin-bottom: 24px;
-      padding: 4px 14px;
-      border-radius: 20px;
-      background: rgba(222, 219, 200, 0.06);
-      border: 1px solid rgba(222, 219, 200, 0.2);
-    }
-
-    .about-heading {
-      font-size: clamp(28px, 4.4vw, 54px);
-      line-height: 1.08;
-      font-weight: 400;
-      color: #ffffff;
-      max-width: 860px;
-      margin: 0 auto 30px;
-      letter-spacing: -0.025em;
-    }
-    .about-heading span.italic-serif {
-      font-family: 'Instrument Serif', Georgia, serif;
-      font-style: italic;
-      color: var(--primary-cream);
-    }
-
-    .about-body {
-      font-size: clamp(15px, 1.4vw, 17px);
-      line-height: 1.75;
-      color: var(--text-cream);
-      max-width: 820px;
-      margin: 0 auto 48px;
-      opacity: 0.92;
-      text-align: center;
-    }
-
-    /* About Metrics Grid */
-    .about-metrics {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 18px;
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
-      padding-top: 36px;
-      margin-top: 20px;
-    }
-
-    .about-metric-item {
-      text-align: center;
-      padding: 10px;
-    }
-    .about-metric-val {
-      font-size: clamp(24px, 2.6vw, 36px);
-      font-weight: 800;
-      color: var(--primary-cream);
-      letter-spacing: -0.03em;
-      margin-bottom: 4px;
-      font-family: 'Inter', sans-serif;
-    }
-    .about-metric-lbl {
-      font-size: 12.5px;
-      color: var(--gray-400);
-      line-height: 1.35;
-    }
-
-    /* ============================================================
-       SECTION 3: FEATURES GRID (4-Column #212121 Cards + Noise)
-       ============================================================ */
-    .section-features {
-      background: #000000;
-      padding: 100px 24px 120px;
-      position: relative;
-      z-index: 20;
-    }
-
-    .features-header {
-      text-align: center;
-      max-width: 840px;
-      margin: 0 auto 60px;
-    }
-
-    .features-title-1 {
-      font-size: clamp(26px, 3.6vw, 44px);
-      font-weight: 700;
-      color: var(--text-cream);
-      letter-spacing: -0.025em;
-      margin-bottom: 8px;
-    }
-    .features-title-2 {
-      font-size: clamp(16px, 2vw, 22px);
-      font-weight: 400;
-      color: var(--gray-500);
-    }
-
-    .features-grid {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 16px;
-      max-width: 1240px;
-      margin: 0 auto;
-    }
-
-    /* Card 1: Video Card */
-    .feature-card-video {
-      position: relative;
-      border-radius: 24px;
-      overflow: hidden;
-      min-height: 480px;
-      border: 1px solid rgba(225, 224, 204, 0.12);
-      display: flex;
-      flex-direction: column;
-      justify-content: flex-end;
-      padding: 30px 24px;
-      background: #050505;
-    }
-    .feature-card-video video {
-      position: absolute;
-      inset: 0;
-      width: 100%;
-      height: 100%;
-      object-fit: cover;
-      opacity: 0.65;
-    }
-    .feature-card-video-overlay {
-      position: absolute;
-      inset: 0;
-      background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.2) 100%);
-      z-index: 1;
-    }
-    .feature-card-video-content {
-      position: relative;
-      z-index: 2;
-    }
-
-    /* Cards 2, 3, 4: #212121 Cards */
-    .feature-card {
-      background: var(--card-features);
-      border: 1px solid rgba(225, 224, 204, 0.1);
-      border-radius: 24px;
-      padding: 32px 26px;
-      min-height: 480px;
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      position: relative;
-      overflow: hidden;
-      transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
-    }
-    .feature-card:hover {
-      transform: translateY(-4px);
-      border-color: rgba(222, 219, 200, 0.3);
-      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-    }
-
-    .card-num-tag {
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.16em;
-      color: var(--primary-cream);
-      text-transform: uppercase;
-      margin-bottom: 14px;
-    }
-
-    .card-title {
-      font-size: 20px;
-      font-weight: 700;
-      color: var(--text-cream);
-      letter-spacing: -0.02em;
-      margin-bottom: 24px;
-      line-height: 1.25;
-    }
-
-    .card-checklist {
-      list-style: none;
-      display: flex;
-      flex-direction: column;
-      gap: 14px;
-      margin-bottom: 30px;
-    }
-
-    .checklist-item {
-      display: flex;
-      align-items: flex-start;
-      gap: 10px;
-      font-size: 13.5px;
-      color: var(--gray-400);
-      line-height: 1.45;
-    }
-    .check-icon {
-      flex-shrink: 0;
-      width: 17px;
-      height: 17px;
-      margin-top: 1px;
-      color: var(--primary-cream);
-    }
-
-    .card-link {
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-      font-size: 13.5px;
-      font-weight: 600;
-      color: var(--primary-cream);
-      margin-top: auto;
-      transition: gap 0.2s ease, color 0.2s ease;
-    }
-    .card-link svg {
-      width: 16px;
-      height: 16px;
-      transform: rotate(-45deg);
-      transition: transform 0.2s ease;
-    }
-    .card-link:hover {
-      color: #ffffff;
-      gap: 10px;
-    }
-    .card-link:hover svg {
-      transform: rotate(0deg);
-    }
-
-    /* ============================================================
-       SECTION 4: DATA TELEMETRY & PHYSICAL CORRELATION SHOWCASE
-       ============================================================ */
-    .section-telemetry {
-      background: #080808;
-      padding: 100px 24px;
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      position: relative;
-      z-index: 20;
-    }
-
-    .telemetry-container {
-      max-width: 1140px;
-      margin: 0 auto;
-    }
-
-    .telemetry-header {
-      margin-bottom: 44px;
-      text-align: center;
-    }
-
-    .telemetry-grid {
-      display: grid;
-      grid-template-columns: 1.15fr 1fr;
-      gap: 28px;
-    }
-
-    .telemetry-box {
-      background: #111111;
-      border: 1px solid rgba(222, 219, 200, 0.12);
-      border-radius: 24px;
-      padding: 34px;
-      position: relative;
-    }
-
-    .telemetry-badge {
-      display: inline-block;
-      font-size: 11px;
-      font-weight: 700;
-      letter-spacing: 0.15em;
-      color: var(--primary-cream);
-      text-transform: uppercase;
-      margin-bottom: 16px;
-    }
-
-    .telemetry-heading {
-      font-size: 22px;
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 14px;
-      letter-spacing: -0.02em;
-    }
-
-    .telemetry-desc {
-      font-size: 14px;
-      color: var(--gray-400);
-      line-height: 1.6;
-      margin-bottom: 24px;
-    }
-
-    .stat-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 11px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-      font-size: 13.5px;
-    }
-    .stat-row:last-child {
-      border-bottom: none;
-    }
-    .stat-lbl {
-      color: var(--gray-400);
-    }
-    .stat-val {
-      color: var(--text-cream);
-      font-weight: 600;
-      font-family: 'Inter', monospace;
-    }
-
-    /* ============================================================
-       SECTION 5: BOTTOM CTA CALLOUT
-       ============================================================ */
-    .section-cta {
-      background: #000000;
-      padding: 130px 24px 100px;
-      text-align: center;
-      position: relative;
-      z-index: 20;
-    }
-
-    .cta-heading {
-      font-size: clamp(32px, 4.8vw, 58px);
-      font-weight: 700;
-      color: #ffffff;
-      margin-bottom: 18px;
-      letter-spacing: -0.03em;
-    }
-    .cta-heading span.italic-serif {
-      font-family: 'Instrument Serif', Georgia, serif;
-      font-style: italic;
-      color: var(--primary-cream);
-    }
-
-    .cta-sub {
-      font-size: 16px;
-      color: var(--gray-400);
-      max-width: 580px;
-      margin: 0 auto 38px;
-      line-height: 1.6;
-    }
-
-    .cta-buttons {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      gap: 14px;
-      flex-wrap: wrap;
-    }
-
-    .site-footer {
-      padding: 50px 24px 30px;
-      text-align: center;
-      font-size: 12.5px;
-      color: var(--gray-500);
-      border-top: 1px solid rgba(255, 255, 255, 0.06);
-      background: #000000;
-    }
-
-    /* Responsive */
-    @media (max-width: 1080px) {
-      .features-grid {
-        grid-template-columns: repeat(2, 1fr);
-      }
-      .telemetry-grid {
-        grid-template-columns: 1fr;
-      }
-      .about-metrics {
-        grid-template-columns: repeat(2, 1fr);
-      }
-    }
-
-    @media (max-width: 768px) {
-      .features-grid {
-        grid-template-columns: 1fr;
-      }
-      .about-card {
-        padding: 44px 24px;
-      }
-      .about-metrics {
-        grid-template-columns: 1fr 1fr;
-      }
-      header.header {
-        padding: 18px 20px;
-      }
-      #site-nav {
-        display: none;
-      }
-      footer.stats {
-        flex-direction: column;
-        gap: 12px;
-        padding: 20px;
-        align-items: flex-start;
-      }
-    }
-  </style>
 </head>
-<body>
+<body style="margin:0;padding:0;background:#000000;color:#ffffff;">
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Almarai:wght@300;400;700;800&family=Instrument+Serif:ital@1&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap');
 
-  <!-- ============================================================
-       SECTION 1: HERO TOP SCREEN (100vh Single Viewport Initial)
-       ============================================================ -->
-  <div class="hero-viewport" id="hero">
-    <div class="hero-photo">
-      <video class="hero-video" autoplay loop muted playsinline preload="auto">
-        <source src="static/hero_bg.mp4" type="video/mp4">
-        <source src="assets/hero_bg.mp4" type="video/mp4">
-        <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260818_072341_50851634-bbc3-4c33-9acc-7647d4db44aa.mp4" type="video/mp4">
-      </video>
-      <div class="noise-overlay"></div>
-    </div>
+/* Streamlit full-bleed reset on landing */
+[data-testid="stSidebar"] { display: none !important; }
+[data-testid="stHeader"] { display: none !important; }
+[data-testid="stToolbar"] { display: none !important; }
+#MainMenu { display: none !important; }
+footer[data-testid="stFooter"] { display: none !important; }
 
-    <!-- Top Navigation -->
-    <header class="header">
-      <a href="/?view=landing" class="logo">
-        <svg class="logo-mark" viewBox="0 0 24 24" width="22" height="22" fill="#ffffff">
-          <g transform="rotate(-30 12 12)">
-            <circle cx="7.3" cy="3.2" r="1.45" />
-            <rect x="5.5" y="4.7" width="3.6" height="14.6" rx="1.8" />
-            <rect x="14.9" y="4.7" width="3.6" height="14.6" rx="1.8" />
-            <circle cx="16.7" cy="20.8" r="1.45" />
-          </g>
-        </svg>
-        <span>Vidyut<span class="logo-suffix">.ai</span></span>
-      </a>
+.main, [data-testid="stAppViewContainer"], [data-testid="stMainBlockContainer"], .block-container {
+    padding: 0 !important;
+    margin: 0 !important;
+    max-width: 100vw !important;
+    width: 100vw !important;
+    height: auto !important;
+    min-height: 100vh !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    background: #000000 !important;
+}
 
-      <nav id="site-nav" aria-label="Main navigation">
-        <a href="#about" class="nav-pill">About System</a>
-        <a href="#features" class="nav-pill">Core Features</a>
-        <a href="#telemetry" class="nav-pill">Thermal Physics</a>
-        <a href="/?view=command_center&tab=forecast" onclick="goToCommandCenter('forecast'); return false;" class="nav-pill">24h & 7D Forecast</a>
-        <a href="/?view=command_center&tab=replay" onclick="goToCommandCenter('replay'); return false;" class="nav-pill">Instant Replay</a>
-      </nav>
+/* Immediate black background */
+html, body {
+  background: #000000 !important;
+  color: #ffffff;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden !important;
+  overflow-y: auto !important;
+  scroll-behavior: smooth;
+  font-family: 'Almarai', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
 
-      <div class="header-cta">
-        <a href="/?view=command_center" onclick="goToCommandCenter(); return false;" class="btn btn-cream">
-          <span>Enter Command Center</span>
-          <span class="btn-arrow-circle">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </span>
-        </a>
-      </div>
-    </header>
+:root {
+  --bg: #000000;
+  --text: #ffffff;
+  --primary-cream: #DEDBC8;
+  --text-cream: #E1E0CC;
+  --card-about: #101010;
+  --card-features: #212121;
+  --gray-400: #9ca3af;
+  --gray-500: #6b7280;
+  --border-cream: rgba(225, 224, 204, 0.15);
 
-    <!-- Hero Content -->
-    <main class="hero">
-      <div class="badge">
-        <span class="badge-dot"></span>
-        <span>Delhi SLDC Operational AI Engine</span>
-      </div>
+  --logo: 15.5px;
+  --nav: 14px;
+  --nav-h: 40px;
+  --btn: 13.5px;
+  --btn-h: 42px;
+  --header-y: 22px;
+  --header-x: 40px;
+  --stats-x: 72px;
+}
 
-      <h1 class="hero-title">
-        Delhi Electricity Demand<br>
-        <span class="italic-serif">Prediction & Grid Dispatch</span> System
-      </h1>
+* {
+  box-sizing: border-box;
+}
 
-      <p class="hero-lede">
-        High-resolution AI load forecasting & peak dispatch intelligence for Delhi SLDC and Discoms. Real-time Open-Meteo weather physics coupled with 4 years of 5-minute telemetry.
-      </p>
+a {
+  color: inherit;
+  text-decoration: none;
+}
 
-      <div class="hero-actions">
-        <a href="/?view=command_center" onclick="goToCommandCenter(); return false;" class="btn btn-cream" style="height: 46px; padding: 0 24px; font-size: 15px;">
-          <span>Launch Command Center</span>
-          <span class="btn-arrow-circle">
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </span>
-        </a>
-        <a href="/?view=command_center&tab=forecast" onclick="goToCommandCenter('forecast'); return false;" class="btn btn-ghost" style="height: 46px; padding: 0 22px; font-size: 15px;">
-          See 7-Day Forecast
-        </a>
-        <a href="#about" class="scroll-indicator" style="width: 100%;">
-          <span>Explore Platform Architecture & Physics</span>
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
-        </a>
-      </div>
-    </main>
+button {
+  font-family: inherit;
+  cursor: pointer;
+  border: none;
+  background: none;
+}
 
-    <!-- Stats Footer -->
-    <footer class="stats">
-      <div class="stat-item">
-        <div class="stat-bullet"></div>
-        <span><b>8,565 MW</b> all-time Delhi peak calibrated</span>
-      </div>
-      <div class="stat-item">
-        <div class="stat-bullet"></div>
-        <span><b>2.07% MAPE</b> machine learning precision</span>
-      </div>
-      <div class="stat-item">
-        <div class="stat-bullet"></div>
-        <span><b>5 Discom Feeder Zones</b> actively apportioned</span>
-      </div>
-    </footer>
+/* Grain & Noise Overlay Utilities */
+.noise-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.7'/%3E%3C/svg%3E");
+  mix-blend-mode: overlay;
+  pointer-events: none;
+  z-index: 2;
+}
+
+.bg-noise {
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise2'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise2)' opacity='0.15'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* ============================================================
+   SECTION 1: HERO TOP SCREEN (100vh Viewport)
+   ============================================================ */
+.hero-viewport {
+  position: relative;
+  width: 100%;
+  height: 100vh;
+  min-height: 100vh;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  overflow: hidden;
+  background: #000000;
+}
+
+.hero-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  background: #000000;
+}
+
+.hero-video {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  min-width: 100%;
+  min-height: 100%;
+  width: auto;
+  height: auto;
+  transform: translate(-50%, -50%);
+  object-fit: cover;
+  opacity: 1;
+}
+
+.hero-photo::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0.25) 0%, rgba(0, 0, 0, 0.65) 70%, #000000 100%);
+  pointer-events: none;
+}
+
+/* Header */
+.hero-header {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: var(--header-y) var(--header-x) 10px;
+  z-index: 50;
+  position: relative;
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  justify-self: start;
+  font-size: var(--logo);
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  color: #fff;
+}
+.logo-suffix {
+  font-weight: 400;
+  color: var(--primary-cream);
+  opacity: 0.75;
+}
+
+.hero-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-self: center;
+}
+
+.nav-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--nav-h);
+  padding: 0 18px;
+  border-radius: 7px;
+  overflow: hidden;
+  position: relative;
+  border: 1px solid rgba(198, 198, 198, 0.55);
+  background: linear-gradient(105deg, #050505 0%, #2a2a2a 48%, #4a4a4a 100%);
+  color: #f3f3f3;
+  font-size: var(--nav);
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  white-space: nowrap;
+  transition: background 0.35s ease, border-color 0.35s ease, box-shadow 0.35s ease;
+}
+
+.nav-pill::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(115deg, transparent 30%, rgba(255, 255, 255, 0.16) 50%, transparent 70%);
+  transform: translateX(-120%);
+  transition: transform 0.6s ease;
+}
+
+.nav-pill:hover {
+  border-color: var(--primary-cream);
+  background: linear-gradient(105deg, #111111 0%, #3a3a3a 45%, #6a6a6a 100%);
+  box-shadow: 0 0 18px rgba(222, 219, 200, 0.25);
+  color: #ffffff;
+}
+
+.nav-pill:hover::before {
+  transform: translateX(120%);
+}
+
+.header-cta {
+  justify-self: end;
+}
+
+.btn {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--btn-h);
+  padding: 0 18px;
+  border-radius: 9999px;
+  font-size: var(--btn);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease, color 0.3s ease, transform 0.2s ease;
+}
+
+.btn-cream {
+  background: var(--primary-cream);
+  color: #000000;
+  border: 1px solid #ffffff;
+}
+.btn-cream:hover {
+  background: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 20px rgba(222, 219, 200, 0.35);
+}
+
+.btn-ghost {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: #ffffff;
+}
+.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: var(--primary-cream);
+  color: var(--primary-cream);
+}
+
+.btn-arrow-circle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: #000000;
+  border-radius: 50%;
+  margin-left: 8px;
+  transition: transform 0.25s ease;
+}
+.btn:hover .btn-arrow-circle {
+  transform: scale(1.15) rotate(-45deg);
+}
+
+/* Hero Center Content */
+.hero-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 0 24px;
+  max-width: 880px;
+  margin: 0 auto;
+}
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 28px;
+  padding: 0 14px;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--primary-cream);
+  background: rgba(222, 219, 200, 0.08);
+  border: 1px solid rgba(222, 219, 200, 0.25);
+  margin-bottom: 22px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #10B981;
+  box-shadow: 0 0 8px #10B981;
+}
+
+.hero-title {
+  font-size: clamp(34px, 5.2vw, 56px);
+  font-weight: 800;
+  line-height: 1.08;
+  letter-spacing: -0.035em;
+  color: #ffffff;
+  margin-bottom: 18px;
+  text-wrap: balance;
+}
+.hero-title span.italic-serif {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  font-weight: 400;
+  color: var(--primary-cream);
+}
+
+.hero-lede {
+  font-size: clamp(15px, 1.8vw, 17px);
+  line-height: 1.55;
+  color: var(--gray-400);
+  max-width: 640px;
+  margin-bottom: 34px;
+  text-wrap: balance;
+}
+
+.hero-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* Hero Stats Footer */
+.hero-stats {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px var(--stats-x) 32px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  background: linear-gradient(to top, rgba(0,0,0,0.85) 0%, transparent 100%);
+}
+
+.stat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 13.5px;
+  color: #d8d8d8;
+}
+.stat-bullet {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--primary-cream);
+  box-shadow: 0 0 10px rgba(222, 219, 200, 0.4);
+}
+
+.scroll-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--primary-cream);
+  opacity: 0.75;
+  margin-top: 18px;
+  cursor: pointer;
+  transition: opacity 0.2s, transform 0.2s;
+}
+.scroll-indicator:hover {
+  opacity: 1;
+  transform: translateY(2px);
+}
+
+/* ============================================================
+   SECTION 2: ABOUT SECTION (#101010 Card with Warm Cream)
+   ============================================================ */
+.section-about {
+  background: #000000;
+  padding: 110px 24px;
+  position: relative;
+  z-index: 20;
+}
+
+.about-card {
+  background: var(--card-about);
+  border: 1px solid var(--border-cream);
+  border-radius: 32px;
+  max-width: 1140px;
+  margin: 0 auto;
+  padding: 70px 48px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 20px 80px rgba(0, 0, 0, 0.8), inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  text-align: center;
+}
+
+.about-label {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--primary-cream);
+  margin-bottom: 24px;
+  padding: 4px 14px;
+  border-radius: 20px;
+  background: rgba(222, 219, 200, 0.06);
+  border: 1px solid rgba(222, 219, 200, 0.2);
+}
+
+.about-heading {
+  font-size: clamp(28px, 4.4vw, 54px);
+  line-height: 1.08;
+  font-weight: 400;
+  color: #ffffff;
+  max-width: 860px;
+  margin: 0 auto 30px;
+  letter-spacing: -0.025em;
+}
+.about-heading span.italic-serif {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  color: var(--primary-cream);
+}
+
+.about-body {
+  font-size: clamp(15px, 1.4vw, 17px);
+  line-height: 1.75;
+  color: var(--text-cream);
+  max-width: 820px;
+  margin: 0 auto 48px;
+  opacity: 0.92;
+  text-align: center;
+}
+
+.about-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 36px;
+  margin-top: 20px;
+}
+
+.about-metric-item {
+  text-align: center;
+  padding: 10px;
+}
+.about-metric-val {
+  font-size: clamp(24px, 2.6vw, 36px);
+  font-weight: 800;
+  color: var(--primary-cream);
+  letter-spacing: -0.03em;
+  margin-bottom: 4px;
+  font-family: 'Inter', sans-serif;
+}
+.about-metric-lbl {
+  font-size: 12.5px;
+  color: var(--gray-400);
+  line-height: 1.35;
+}
+
+/* ============================================================
+   SECTION 3: FEATURES GRID (4-Column #212121 Cards)
+   ============================================================ */
+.section-features {
+  background: #000000;
+  padding: 100px 24px 120px;
+  position: relative;
+  z-index: 20;
+}
+
+.features-header {
+  text-align: center;
+  max-width: 840px;
+  margin: 0 auto 60px;
+}
+
+.features-title-1 {
+  font-size: clamp(26px, 3.6vw, 44px);
+  font-weight: 700;
+  color: var(--text-cream);
+  letter-spacing: -0.025em;
+  margin-bottom: 8px;
+}
+.features-title-2 {
+  font-size: clamp(16px, 2vw, 22px);
+  font-weight: 400;
+  color: var(--gray-500);
+}
+
+.features-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  max-width: 1240px;
+  margin: 0 auto;
+}
+
+.feature-card-video {
+  position: relative;
+  border-radius: 24px;
+  overflow: hidden;
+  min-height: 480px;
+  border: 1px solid rgba(225, 224, 204, 0.12);
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  padding: 30px 24px;
+  background: #050505;
+}
+.feature-card-video video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0.65;
+}
+.feature-card-video-overlay {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.95) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.2) 100%);
+  z-index: 1;
+}
+.feature-card-video-content {
+  position: relative;
+  z-index: 2;
+}
+
+.feature-card {
+  background: var(--card-features);
+  border: 1px solid rgba(225, 224, 204, 0.1);
+  border-radius: 24px;
+  padding: 32px 26px;
+  min-height: 480px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  position: relative;
+  overflow: hidden;
+  transition: transform 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.feature-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(222, 219, 200, 0.3);
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
+}
+
+.card-num-tag {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  color: var(--primary-cream);
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.card-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--text-cream);
+  letter-spacing: -0.02em;
+  margin-bottom: 24px;
+  line-height: 1.25;
+}
+
+.card-checklist {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 30px;
+  padding: 0;
+}
+
+.checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 13.5px;
+  color: var(--gray-400);
+  line-height: 1.45;
+}
+.check-icon {
+  flex-shrink: 0;
+  width: 17px;
+  height: 17px;
+  margin-top: 1px;
+  color: var(--primary-cream);
+}
+
+.card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13.5px;
+  font-weight: 600;
+  color: var(--primary-cream);
+  margin-top: auto;
+  transition: gap 0.2s ease, color 0.2s ease;
+}
+.card-link svg {
+  width: 16px;
+  height: 16px;
+  transform: rotate(-45deg);
+  transition: transform 0.2s ease;
+}
+.card-link:hover {
+  color: #ffffff;
+  gap: 10px;
+}
+.card-link:hover svg {
+  transform: rotate(0deg);
+}
+
+/* ============================================================
+   SECTION 4: DATA TELEMETRY & PHYSICAL CORRELATION SHOWCASE
+   ============================================================ */
+.section-telemetry {
+  background: #080808;
+  padding: 100px 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  position: relative;
+  z-index: 20;
+}
+
+.telemetry-container {
+  max-width: 1140px;
+  margin: 0 auto;
+}
+
+.telemetry-header {
+  margin-bottom: 44px;
+  text-align: center;
+}
+
+.telemetry-grid {
+  display: grid;
+  grid-template-columns: 1.15fr 1fr;
+  gap: 28px;
+}
+
+.telemetry-box {
+  background: #111111;
+  border: 1px solid rgba(222, 219, 200, 0.12);
+  border-radius: 24px;
+  padding: 34px;
+  position: relative;
+}
+
+.telemetry-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--primary-cream);
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+
+.telemetry-heading {
+  font-size: 22px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 14px;
+  letter-spacing: -0.02em;
+}
+
+.telemetry-desc {
+  font-size: 14px;
+  color: var(--gray-400);
+  line-height: 1.6;
+  margin-bottom: 24px;
+}
+
+.stat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  font-size: 13.5px;
+}
+.stat-row:last-child {
+  border-bottom: none;
+}
+.stat-lbl {
+  color: var(--gray-400);
+}
+.stat-val {
+  color: var(--text-cream);
+  font-weight: 600;
+  font-family: 'Inter', monospace;
+}
+
+/* ============================================================
+   SECTION 5: BOTTOM CALL TO ACTION
+   ============================================================ */
+.section-cta {
+  background: #000000;
+  padding: 130px 24px 100px;
+  text-align: center;
+  position: relative;
+  z-index: 20;
+}
+
+.cta-heading {
+  font-size: clamp(32px, 4.8vw, 58px);
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 18px;
+  letter-spacing: -0.03em;
+}
+.cta-heading span.italic-serif {
+  font-family: 'Instrument Serif', Georgia, serif;
+  font-style: italic;
+  color: var(--primary-cream);
+}
+
+.cta-sub {
+  font-size: 16px;
+  color: var(--gray-400);
+  max-width: 580px;
+  margin: 0 auto 38px;
+  line-height: 1.6;
+}
+
+.cta-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.site-footer {
+  padding: 50px 24px 30px;
+  text-align: center;
+  font-size: 12.5px;
+  color: var(--gray-500);
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  background: #000000;
+}
+
+/* Responsive */
+@media (max-width: 1080px) {
+  .features-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .telemetry-grid {
+    grid-template-columns: 1fr;
+  }
+  .about-metrics {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .features-grid {
+    grid-template-columns: 1fr;
+  }
+  .about-card {
+    padding: 44px 24px;
+  }
+  .about-metrics {
+    grid-template-columns: 1fr 1fr;
+  }
+  .hero-header {
+    padding: 18px 20px;
+  }
+  .hero-nav {
+    display: none;
+  }
+  .hero-stats {
+    flex-direction: column;
+    gap: 12px;
+    padding: 20px;
+    align-items: flex-start;
+  }
+}
+</style>
+
+<!-- ============================================================
+     SECTION 1: HERO TOP SCREEN (100vh Viewport)
+     ============================================================ -->
+<div class="hero-viewport" id="hero">
+  <div class="hero-photo">
+    <video class="hero-video" autoplay loop muted playsinline preload="auto">
+      <source src="static/hero_bg.mp4" type="video/mp4">
+      <source src="assets/hero_bg.mp4" type="video/mp4">
+      <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260818_072341_50851634-bbc3-4c33-9acc-7647d4db44aa.mp4" type="video/mp4">
+    </video>
+    <div class="noise-overlay"></div>
   </div>
 
-  <!-- ============================================================
-       SECTION 2: ABOUT / MISSION (Dark, Moody, Warm Cream Card)
-       ============================================================ -->
-  <section id="about" class="section-about">
-    <div class="about-card bg-noise">
-      <div class="about-label">STATE LOAD DESPATCH INFRASTRUCTURE</div>
+  <!-- Top Navigation -->
+  <div class="hero-header">
+    <a href="/?view=landing" class="logo">
+      <svg class="logo-mark" viewBox="0 0 24 24" width="22" height="22" fill="#ffffff">
+        <g transform="rotate(-30 12 12)">
+          <circle cx="7.3" cy="3.2" r="1.45" />
+          <rect x="5.5" y="4.7" width="3.6" height="14.6" rx="1.8" />
+          <rect x="14.9" y="4.7" width="3.6" height="14.6" rx="1.8" />
+          <circle cx="16.7" cy="20.8" r="1.45" />
+        </g>
+      </svg>
+      <span>Vidyut<span class="logo-suffix">.ai</span></span>
+    </a>
 
-      <h2 class="about-heading">
-        Predictive AI infrastructure,<br>
-        <span class="italic-serif">— engineered for Delhi's 8,600 MW summer peaks.</span>
-      </h2>
-
-      <p class="about-body">
-        Delhi's peak electricity demand shatters historical records every summer, routinely breaching 8,000+ MW. 
-        Above the <b>28°C air conditioning threshold</b>, every single degree Celsius rise injects <b>280 to 320 MW</b> of sudden cooling load into the grid. 
-        Vidyut.ai unifies <b>4 years of 5-minute historical load records (2021–2024)</b> with high-resolution Open-Meteo meteorological telemetry to forecast short-term demand with an industry-grade <b>2.07% validation MAPE</b>. 
-        State Load Despatch Centre (SLDC) engineers and Discom planners (BRPL, BYPL, TPDDL, NDMC) transition from reactive crisis mitigation to predictive feeder balancing, spinning reserve dispatch, and black-out prevention.
-      </p>
-
-      <div class="about-metrics">
-        <div class="about-metric-item">
-          <div class="about-metric-val">8,565 MW</div>
-          <div class="about-metric-lbl">All-Time Peak Demand<br>(Recorded 19 June 2024)</div>
-        </div>
-        <div class="about-metric-item">
-          <div class="about-metric-val">+300 MW</div>
-          <div class="about-metric-lbl">Per °C Cooling Surge<br>(Above 28°C Threshold)</div>
-        </div>
-        <div class="about-metric-item">
-          <div class="about-metric-val">2.07%</div>
-          <div class="about-metric-lbl">Model Validation MAPE<br>(HistGradientBoosting)</div>
-        </div>
-        <div class="about-metric-item">
-          <div class="about-metric-val">34,585</div>
-          <div class="about-metric-lbl">Clean Hourly Records<br>(4 Continuous Years)</div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================
-       SECTION 3: FEATURES GRID (4-Column #212121 Cards)
-       ============================================================ -->
-  <section id="features" class="section-features bg-noise">
-    <div class="features-header">
-      <div class="features-title-1">Studio-grade AI telemetry for modern grid dispatch.</div>
-      <div class="features-title-2">Built for Delhi SLDC. Powered by real-time meteorological physics.</div>
+    <div class="hero-nav" aria-label="Main navigation">
+      <a href="#about" class="nav-pill">About System</a>
+      <a href="#features" class="nav-pill">Core Features</a>
+      <a href="#telemetry" class="nav-pill">Thermal Physics</a>
+      <a href="/?view=command_center&tab=forecast" onclick="goToCommandCenter('forecast'); return false;" class="nav-pill">24h & 7D Forecast</a>
+      <a href="/?view=command_center&tab=replay" onclick="goToCommandCenter('replay'); return false;" class="nav-pill">Instant Replay</a>
     </div>
 
-    <div class="features-grid">
-      <!-- Card 1: Video & Live Canvas Card -->
-      <div class="feature-card-video">
-        <video autoplay loop muted playsinline preload="auto">
-          <source src="static/hero_bg.mp4" type="video/mp4">
-          <source src="assets/hero_bg.mp4" type="video/mp4">
-          <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_133058_0504132a-0cf3-4450-a370-8ea3b05c95d4.mp4" type="video/mp4">
-        </video>
-        <div class="feature-card-video-overlay"></div>
-        <div class="feature-card-video-content">
-          <div style="font-size: 11px; font-weight: 700; color: var(--primary-cream); letter-spacing: 0.16em; margin-bottom: 8px;">TELEMETRY CANVAS</div>
-          <div style="font-size: 20px; font-weight: 700; color: var(--text-cream); margin-bottom: 8px;">24h Dynamic Load Canvas.</div>
-          <div style="font-size: 13px; color: var(--gray-400); line-height: 1.45; margin-bottom: 14px;">
-            Continuous tracking of Delhi's load curves with air-conditioning thermal overlays.
-          </div>
-          <div style="font-size: 11px; color: var(--primary-cream); opacity: 0.85; letter-spacing: 0.05em;">
-            📍 DELHI NCT • 28.6139° N, 77.2090° E
-          </div>
-        </div>
-      </div>
-
-      <!-- Card 2: 01 Multi-Horizon Forecasting -->
-      <div class="feature-card">
-        <div>
-          <div class="card-num-tag">01 / FORECAST ENGINE</div>
-          <div class="card-title">Multi-Horizon AI Forecasting.</div>
-          <ul class="card-checklist">
-            <li class="checklist-item">
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><b>24-Hour Hourly Predictions</b> with ±MAPE uncertainty confidence intervals</span>
-            </li>
-            <li class="checklist-item">
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><b>168-Hour (7-Day)</b> recursive autoregressive multi-day load projections</span>
-            </li>
-            <li class="checklist-item">
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><b>HistGradientBoosting</b> model achieving 2.07% validation MAPE</span>
-            </li>
-            <li class="checklist-item">
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><b>Strict Leakage Protection</b> using strictly lagged historical observations</span>
-            </li>
-          </ul>
-        </div>
-        <a href="/?view=command_center&tab=forecast" onclick="goToCommandCenter('forecast'); return false;" class="card-link">
-          <span>Explore Forecasts</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
-      </div>
-
-      <!-- Card 3: 02 Thermal Sensitivity & Alerts -->
-      <div class="feature-card">
-        <div>
-          <div class="card-num-tag">02 / THERMAL ANALYTICS</div>
-          <div class="card-title">Thermal Sensitivity & Peak Alerts.</div>
-          <ul class="card-checklist">
-            <li class="checklist-item">
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><b>28°C Threshold Detection:</b> Non-linear cooling load tracking (+280-320 MW/°C)</span>
-            </li>
-            <li class="checklist-item">
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><b>Dual Diurnal Peaks:</b> 15:00 commercial HVAC & 23:00 residential AC surge</span>
-            </li>
-            <li class="checklist-item">
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><b>Capacity Utilization:</b> Dynamic 80% Warning and 90% Critical triggers</span>
-            </li>
-            <li class="checklist-item">
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><b>Dispatch Directives:</b> Automated bilateral import & spinning reserve protocols</span>
-            </li>
-          </ul>
-        </div>
-        <a href="/?view=command_center&tab=weather" onclick="goToCommandCenter('weather'); return false;" class="card-link">
-          <span>View Thermal Physics</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
-      </div>
-
-      <!-- Card 4: 03 Feeder Balancing & Solar -->
-      <div class="feature-card">
-        <div>
-          <div class="card-num-tag">03 / GRID BALANCING</div>
-          <div class="card-title">Feeder Balancing & Rooftop Solar.</div>
-          <ul class="card-checklist">
-            <li class="checklist-item">
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><b>Feeder Apportionment:</b> BRPL South, BRPL West, TPDDL North, BYPL East, NDMC</span>
-            </li>
-            <li class="checklist-item">
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><b>Rooftop Solar PV:</b> Simulation of 0–1,500 MW solar duck curve shaving</span>
-            </li>
-            <li class="checklist-item">
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><b>Point-in-Time Replay:</b> Select any Year (2021–2024), Date, and Hour</span>
-            </li>
-            <li class="checklist-item">
-              <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-              <span><b>100% Offline Resilience:</b> Instant fallback synthetic demo mode</span>
-            </li>
-          </ul>
-        </div>
-        <a href="/?view=command_center&tab=area" onclick="goToCommandCenter('area'); return false;" class="card-link">
-          <span>Inspect Feeder Zones</span>
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-        </a>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================
-       SECTION 4: DATA TELEMETRY & PHYSICAL CORRELATION SHOWCASE
-       ============================================================ -->
-  <section id="telemetry" class="section-telemetry">
-    <div class="telemetry-container">
-      <div class="telemetry-header">
-        <div class="about-label">GROUND-TRUTH GRID DATA INTELLIGENCE</div>
-        <h2 style="font-size: clamp(26px, 3.8vw, 42px); font-weight: 700; color: #ffffff; letter-spacing: -0.025em; margin-bottom: 12px;">
-          Calibrated against Delhi's live transmission records.
-        </h2>
-        <p style="color: var(--gray-400); max-width: 680px; margin: 0 auto; font-size: 15px;">
-          Directly synchronizing high-resolution meteorological telemetry with 5-minute historical SCADA logs from the State Load Despatch Centre.
-        </p>
-      </div>
-
-      <div class="telemetry-grid">
-        <!-- Box 1: Historical Record Peak Event (Screenshot 1 Reference) -->
-        <div class="telemetry-box">
-          <div class="telemetry-badge">SCADA TELEMETRY • JUNE 19, 2024 (15:00 IST)</div>
-          <div class="telemetry-heading">Record Summer Heatwave Surge</div>
-          <div class="telemetry-desc">
-            On June 19, 2024 at 15:00 IST, Delhi recorded its all-time historical peak load of <b>8,565 MW</b> at 42.7°C ambient temperature. Vidyut.ai captured and modeled this peak load curve within <b>95.2% capacity utilization</b>.
-          </div>
-
-          <div class="stat-row">
-            <span class="stat-lbl">Actual Transmission Load:</span>
-            <span class="stat-val" style="color: #FACC15;">8,565.1 MW</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-lbl">AI Model Forecast (t-24h):</span>
-            <span class="stat-val">7,257.7 MW (Conservative Safety Band)</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-lbl">Ambient Air Temperature:</span>
-            <span class="stat-val" style="color: #EF4444;">42.7 °C (Extreme Heat Alert)</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-lbl">Grid Headroom / Utilization:</span>
-            <span class="stat-val" style="color: #EF4444;">95.2% [CRITICAL PEAK]</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-lbl">Operational Action Triggered:</span>
-            <span class="stat-val" style="font-size: 12px;">🔴 Peaking plants & inter-state import</span>
-          </div>
-        </div>
-
-        <!-- Box 2: Thermal Cooling Physics (Screenshot 2 Reference) -->
-        <div class="telemetry-box">
-          <div class="telemetry-badge">METEOROLOGICAL PHYSICS • 28°C THRESHOLD</div>
-          <div class="telemetry-heading">Non-Linear Thermal Cooling Response</div>
-          <div class="telemetry-desc">
-            Open-Meteo telemetry integration captures the non-linear relationship between temperature and power demand in the National Capital Territory.
-          </div>
-
-          <div class="stat-row">
-            <span class="stat-lbl">AC Activation Baseline:</span>
-            <span class="stat-val" style="color: #10B981;">28.0 °C Thermal Threshold</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-lbl">Cooling Degree Rate (CDD):</span>
-            <span class="stat-val" style="color: #FACC15;">+280 to 320 MW per °C</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-lbl">Diurnal Peak 1 (Afternoon):</span>
-            <span class="stat-val">15:00 - 16:30 (Commercial HVAC)</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-lbl">Diurnal Peak 2 (Nighttime):</span>
-            <span class="stat-val">23:00 - 01:00 (Residential Sleeping AC)</span>
-          </div>
-          <div class="stat-row">
-            <span class="stat-lbl">Telemetry Coordinates:</span>
-            <span class="stat-val">28.6139° N, 77.2090° E (Delhi NCT)</span>
-          </div>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- ============================================================
-       SECTION 5: BOTTOM CALL TO ACTION
-       ============================================================ -->
-  <section class="section-cta">
-    <h2 class="cta-heading">
-      Ready to dispatch<br>
-      <span class="italic-serif">Delhi's future electric grid?</span>
-    </h2>
-
-    <p class="cta-sub">
-      Experience live short-term demand forecasting, dynamic threshold risk alerts, and feeder-level load balancing in real time.
-    </p>
-
-    <div class="cta-buttons">
-      <a href="/?view=command_center" onclick="goToCommandCenter(); return false;" class="btn btn-cream" style="height: 48px; padding: 0 28px; font-size: 15.5px;">
-        <span>Enter Vidyut Command Center</span>
+    <div class="header-cta">
+      <a href="/?view=command_center" onclick="goToCommandCenter(); return false;" class="btn btn-cream">
+        <span>Enter Command Center</span>
         <span class="btn-arrow-circle">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
         </span>
       </a>
+    </div>
+  </div>
 
-      <a href="/?view=command_center&tab=replay" onclick="goToCommandCenter('replay'); return false;" class="btn btn-ghost" style="height: 48px; padding: 0 24px; font-size: 15px;">
-        Explore Historical Replay
+  <!-- Hero Content -->
+  <div class="hero-content">
+    <div class="badge">
+      <span class="badge-dot"></span>
+      <span>Delhi SLDC Operational AI Engine</span>
+    </div>
+
+    <h1 class="hero-title">
+      Delhi Electricity Demand<br>
+      <span class="italic-serif">Prediction & Grid Dispatch</span> System
+    </h1>
+
+    <p class="hero-lede">
+      High-resolution AI load forecasting & peak dispatch intelligence for Delhi SLDC and Discoms. Real-time Open-Meteo weather physics coupled with 4 years of 5-minute telemetry.
+    </p>
+
+    <div class="hero-actions">
+      <a href="/?view=command_center" onclick="goToCommandCenter(); return false;" class="btn btn-cream" style="height: 46px; padding: 0 24px; font-size: 15px;">
+        <span>Launch Command Center</span>
+        <span class="btn-arrow-circle">
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+        </span>
+      </a>
+      <a href="/?view=command_center&tab=forecast" onclick="goToCommandCenter('forecast'); return false;" class="btn btn-ghost" style="height: 46px; padding: 0 22px; font-size: 15px;">
+        See 7-Day Forecast
+      </a>
+      <a href="#about" class="scroll-indicator" style="width: 100%;">
+        <span>Explore Platform Architecture & Physics</span>
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
       </a>
     </div>
-  </section>
+  </div>
 
-  <!-- Site Footer -->
-  <footer class="site-footer">
-    <div style="margin-bottom: 8px;">
-      <b>Vidyut.ai</b> — Delhi State Load Despatch Centre (SLDC) Demand Intelligence Platform
+  <!-- Stats Footer -->
+  <div class="hero-stats">
+    <div class="stat-item">
+      <div class="stat-bullet"></div>
+      <span><b>8,565 MW</b> all-time Delhi peak calibrated</span>
     </div>
-    <div>
-      Trained on 4 Years of Real Delhi Power Demand (2021–2024) • Open-Meteo High-Resolution Meteorological Telemetry • 100% Free & Open Tech Stack
+    <div class="stat-item">
+      <div class="stat-bullet"></div>
+      <span><b>2.07% MAPE</b> machine learning precision</span>
     </div>
-  </footer>
+    <div class="stat-item">
+      <div class="stat-bullet"></div>
+      <span><b>5 Discom Feeder Zones</b> actively apportioned</span>
+    </div>
+  </div>
+</div>
 
-  <!-- Navigation JavaScript -->
-  <script>
-    function goToCommandCenter(tab) {
-      var base = window.location.protocol === 'file:' ? 'http://localhost:8501/' : '/';
-      var url = base + '?view=command_center' + (tab ? '&tab=' + tab : '');
-      try {
-        if (window.top && window.top !== window) {
-          window.top.location.href = url;
-          return;
+<!-- ============================================================
+     SECTION 2: ABOUT / MISSION (#101010 Card with Warm Cream)
+     ============================================================ -->
+<div id="about" class="section-about">
+  <div class="about-card bg-noise">
+    <div class="about-label">STATE LOAD DESPATCH INFRASTRUCTURE</div>
+
+    <h2 class="about-heading">
+      Predictive AI infrastructure,<br>
+      <span class="italic-serif">— engineered for Delhi's 8,600 MW summer peaks.</span>
+    </h2>
+
+    <p class="about-body">
+      Delhi's peak electricity demand shatters historical records every summer, routinely breaching 8,000+ MW. 
+      Above the <b>28°C air conditioning threshold</b>, every single degree Celsius rise injects <b>280 to 320 MW</b> of sudden cooling load into the grid. 
+      Vidyut.ai unifies <b>4 years of 5-minute historical load records (2021–2024)</b> with high-resolution Open-Meteo meteorological telemetry to forecast short-term demand with an industry-grade <b>2.07% validation MAPE</b>. 
+      State Load Despatch Centre (SLDC) engineers and Discom planners (BRPL, BYPL, TPDDL, NDMC) transition from reactive crisis mitigation to predictive feeder balancing, spinning reserve dispatch, and black-out prevention.
+    </p>
+
+    <div class="about-metrics">
+      <div class="about-metric-item">
+        <div class="about-metric-val">8,565 MW</div>
+        <div class="about-metric-lbl">All-Time Peak Demand<br>(Recorded 19 June 2024)</div>
+      </div>
+      <div class="about-metric-item">
+        <div class="about-metric-val">+300 MW</div>
+        <div class="about-metric-lbl">Per °C Cooling Surge<br>(Above 28°C Threshold)</div>
+      </div>
+      <div class="about-metric-item">
+        <div class="about-metric-val">2.07%</div>
+        <div class="about-metric-lbl">Model Validation MAPE<br>(HistGradientBoosting)</div>
+      </div>
+      <div class="about-metric-item">
+        <div class="about-metric-val">34,585</div>
+        <div class="about-metric-lbl">Clean Hourly Records<br>(4 Continuous Years)</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 3: FEATURES GRID (4-Column #212121 Cards)
+     ============================================================ -->
+<div id="features" class="section-features bg-noise">
+  <div class="features-header">
+    <div class="features-title-1">Studio-grade AI telemetry for modern grid dispatch.</div>
+    <div class="features-title-2">Built for Delhi SLDC. Powered by real-time meteorological physics.</div>
+  </div>
+
+  <div class="features-grid">
+    <!-- Card 1: Video & Live Canvas Card -->
+    <div class="feature-card-video">
+      <video autoplay loop muted playsinline preload="auto">
+        <source src="static/hero_bg.mp4" type="video/mp4">
+        <source src="assets/hero_bg.mp4" type="video/mp4">
+        <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260406_133058_0504132a-0cf3-4450-a370-8ea3b05c95d4.mp4" type="video/mp4">
+      </video>
+      <div class="feature-card-video-overlay"></div>
+      <div class="feature-card-video-content">
+        <div style="font-size: 11px; font-weight: 700; color: var(--primary-cream); letter-spacing: 0.16em; margin-bottom: 8px;">TELEMETRY CANVAS</div>
+        <div style="font-size: 20px; font-weight: 700; color: var(--text-cream); margin-bottom: 8px;">24h Dynamic Load Canvas.</div>
+        <div style="font-size: 13px; color: var(--gray-400); line-height: 1.45; margin-bottom: 14px;">
+          Continuous tracking of Delhi's load curves with air-conditioning thermal overlays.
+        </div>
+        <div style="font-size: 11px; color: var(--primary-cream); opacity: 0.85; letter-spacing: 0.05em;">
+          📍 DELHI NCT • 28.6139° N, 77.2090° E
+        </div>
+      </div>
+    </div>
+
+    <!-- Card 2: 01 Multi-Horizon Forecasting -->
+    <div class="feature-card">
+      <div>
+        <div class="card-num-tag">01 / FORECAST ENGINE</div>
+        <div class="card-title">Multi-Horizon AI Forecasting.</div>
+        <ul class="card-checklist">
+          <li class="checklist-item">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><b>24-Hour Hourly Predictions</b> with ±MAPE uncertainty confidence intervals</span>
+          </li>
+          <li class="checklist-item">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><b>168-Hour (7-Day)</b> recursive autoregressive multi-day load projections</span>
+          </li>
+          <li class="checklist-item">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><b>HistGradientBoosting</b> model achieving 2.07% validation MAPE</span>
+          </li>
+          <li class="checklist-item">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><b>Strict Leakage Protection</b> using strictly lagged historical observations</span>
+          </li>
+        </ul>
+      </div>
+      <a href="/?view=command_center&tab=forecast" onclick="goToCommandCenter('forecast'); return false;" class="card-link">
+        <span>Explore Forecasts</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+
+    <!-- Card 3: 02 Thermal Sensitivity & Alerts -->
+    <div class="feature-card">
+      <div>
+        <div class="card-num-tag">02 / THERMAL ANALYTICS</div>
+        <div class="card-title">Thermal Sensitivity & Peak Alerts.</div>
+        <ul class="card-checklist">
+          <li class="checklist-item">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><b>28°C Threshold Detection:</b> Non-linear cooling load tracking (+280-320 MW/°C)</span>
+          </li>
+          <li class="checklist-item">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><b>Dual Diurnal Peaks:</b> 15:00 commercial HVAC & 23:00 residential AC surge</span>
+          </li>
+          <li class="checklist-item">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><b>Capacity Utilization:</b> Dynamic 80% Warning and 90% Critical triggers</span>
+          </li>
+          <li class="checklist-item">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><b>Dispatch Directives:</b> Automated bilateral import & spinning reserve protocols</span>
+          </li>
+        </ul>
+      </div>
+      <a href="/?view=command_center&tab=weather" onclick="goToCommandCenter('weather'); return false;" class="card-link">
+        <span>View Thermal Physics</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+
+    <!-- Card 4: 03 Feeder Balancing & Solar -->
+    <div class="feature-card">
+      <div>
+        <div class="card-num-tag">03 / GRID BALANCING</div>
+        <div class="card-title">Feeder Balancing & Rooftop Solar.</div>
+        <ul class="card-checklist">
+          <li class="checklist-item">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><b>Feeder Apportionment:</b> BRPL South, BRPL West, TPDDL North, BYPL East, NDMC</span>
+          </li>
+          <li class="checklist-item">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><b>Rooftop Solar PV:</b> Simulation of 0–1,500 MW solar duck curve shaving</span>
+          </li>
+          <li class="checklist-item">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><b>Point-in-Time Replay:</b> Select any Year (2021–2024), Date, and Hour</span>
+          </li>
+          <li class="checklist-item">
+            <svg class="check-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+            <span><b>100% Offline Resilience:</b> Instant fallback synthetic demo mode</span>
+          </li>
+        </ul>
+      </div>
+      <a href="/?view=command_center&tab=area" onclick="goToCommandCenter('area'); return false;" class="card-link">
+        <span>Inspect Feeder Zones</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 4: DATA TELEMETRY & PHYSICAL CORRELATION SHOWCASE
+     ============================================================ -->
+<div id="telemetry" class="section-telemetry">
+  <div class="telemetry-container">
+    <div class="telemetry-header">
+      <div class="about-label">GROUND-TRUTH GRID DATA INTELLIGENCE</div>
+      <h2 style="font-size: clamp(26px, 3.8vw, 42px); font-weight: 700; color: #ffffff; letter-spacing: -0.025em; margin-bottom: 12px;">
+        Calibrated against Delhi's live transmission records.
+      </h2>
+      <p style="color: var(--gray-400); max-width: 680px; margin: 0 auto; font-size: 15px;">
+        Directly synchronizing high-resolution meteorological telemetry with 5-minute historical SCADA logs from the State Load Despatch Centre.
+      </p>
+    </div>
+
+    <div class="telemetry-grid">
+      <!-- Box 1: Historical Record Peak Event (Screenshot 1 Reference) -->
+      <div class="telemetry-box">
+        <div class="telemetry-badge">SCADA TELEMETRY • JUNE 19, 2024 (15:00 IST)</div>
+        <div class="telemetry-heading">Record Summer Heatwave Surge</div>
+        <div class="telemetry-desc">
+          On June 19, 2024 at 15:00 IST, Delhi recorded its all-time historical peak load of <b>8,565 MW</b> at 42.7°C ambient temperature. Vidyut.ai captured and modeled this peak load curve within <b>95.2% capacity utilization</b>.
+        </div>
+
+        <div class="stat-row">
+          <span class="stat-lbl">Actual Transmission Load:</span>
+          <span class="stat-val" style="color: #FACC15;">8,565.1 MW</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-lbl">AI Model Forecast (t-24h):</span>
+          <span class="stat-val">7,257.7 MW (Conservative Safety Band)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-lbl">Ambient Air Temperature:</span>
+          <span class="stat-val" style="color: #EF4444;">42.7 °C (Extreme Heat Alert)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-lbl">Grid Headroom / Utilization:</span>
+          <span class="stat-val" style="color: #EF4444;">95.2% [CRITICAL PEAK]</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-lbl">Operational Action Triggered:</span>
+          <span class="stat-val" style="font-size: 12px;">🔴 Peaking plants & inter-state import</span>
+        </div>
+      </div>
+
+      <!-- Box 2: Thermal Cooling Physics (Screenshot 2 Reference) -->
+      <div class="telemetry-box">
+        <div class="telemetry-badge">METEOROLOGICAL PHYSICS • 28°C THRESHOLD</div>
+        <div class="telemetry-heading">Non-Linear Thermal Cooling Response</div>
+        <div class="telemetry-desc">
+          Open-Meteo telemetry integration captures the non-linear relationship between temperature and power demand in the National Capital Territory.
+        </div>
+
+        <div class="stat-row">
+          <span class="stat-lbl">AC Activation Baseline:</span>
+          <span class="stat-val" style="color: #10B981;">28.0 °C Thermal Threshold</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-lbl">Cooling Degree Rate (CDD):</span>
+          <span class="stat-val" style="color: #FACC15;">+280 to 320 MW per °C</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-lbl">Diurnal Peak 1 (Afternoon):</span>
+          <span class="stat-val">15:00 - 16:30 (Commercial HVAC)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-lbl">Diurnal Peak 2 (Nighttime):</span>
+          <span class="stat-val">23:00 - 01:00 (Residential Sleeping AC)</span>
+        </div>
+        <div class="stat-row">
+          <span class="stat-lbl">Telemetry Coordinates:</span>
+          <span class="stat-val">28.6139° N, 77.2090° E (Delhi NCT)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     SECTION 5: BOTTOM CALL TO ACTION
+     ============================================================ -->
+<div class="section-cta">
+  <h2 class="cta-heading">
+    Ready to dispatch<br>
+    <span class="italic-serif">Delhi's future electric grid?</span>
+  </h2>
+
+  <p class="cta-sub">
+    Experience live short-term demand forecasting, dynamic threshold risk alerts, and feeder-level load balancing in real time.
+  </p>
+
+  <div class="cta-buttons">
+    <a href="/?view=command_center" onclick="goToCommandCenter(); return false;" class="btn btn-cream" style="height: 48px; padding: 0 28px; font-size: 15.5px;">
+      <span>Enter Vidyut Command Center</span>
+      <span class="btn-arrow-circle">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2.5"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </span>
+    </a>
+
+    <a href="/?view=command_center&tab=replay" onclick="goToCommandCenter('replay'); return false;" class="btn btn-ghost" style="height: 48px; padding: 0 24px; font-size: 15px;">
+      Explore Historical Replay
+    </a>
+  </div>
+</div>
+
+<!-- Site Footer -->
+<div class="site-footer">
+  <div style="margin-bottom: 8px;">
+    <b>Vidyut.ai</b> — Delhi State Load Despatch Centre (SLDC) Demand Intelligence Platform
+  </div>
+  <div>
+    Trained on 4 Years of Real Delhi Power Demand (2021–2024) • Open-Meteo High-Resolution Meteorological Telemetry • 100% Free & Open Tech Stack
+  </div>
+</div>
+
+<!-- Navigation JavaScript -->
+<script>
+  function goToCommandCenter(tab) {
+    var base = window.location.protocol === 'file:' ? 'http://localhost:8501/' : '/';
+    var url = base + '?view=command_center' + (tab ? '&tab=' + tab : '');
+    try {
+      if (window.top && window.top !== window) {
+        window.top.location.href = url;
+        return;
+      }
+    } catch(e) {}
+    window.location.href = url;
+  }
+
+  (function() {
+    document.querySelectorAll('.btn, .nav-pill, .card-link').forEach(function(el) {
+      el.addEventListener('click', function(e) {
+        var href = el.getAttribute('href');
+        if (href && href.startsWith('#')) return;
+        e.preventDefault();
+        var target = '/?view=command_center';
+        if (href && href.indexOf('tab=') !== -1) {
+          var tab = href.split('tab=')[1];
+          target = '/?view=command_center&tab=' + tab;
         }
-      } catch(e) {}
-      window.location.href = url;
-    }
-
-    (function() {
-      // Direct button and pill click handler
-      document.querySelectorAll('.btn, .nav-pill, .card-link').forEach(function(el) {
-        el.addEventListener('click', function(e) {
-          var href = el.getAttribute('href');
-          if (href && href.startsWith('#')) return; // Allow smooth anchor scrolling
-          e.preventDefault();
-          var target = '/?view=command_center';
-          if (href && href.indexOf('tab=') !== -1) {
-            var tab = href.split('tab=')[1];
-            target = '/?view=command_center&tab=' + tab;
+        if (window.location.protocol === 'file:') {
+          target = 'http://localhost:8501' + target;
+        }
+        try {
+          if (window.top && window.top !== window) {
+            window.top.location.href = target;
+            return;
           }
-          if (window.location.protocol === 'file:') {
-            target = 'http://localhost:8501' + target;
-          }
-          try {
-            if (window.top && window.top !== window) {
-              window.top.location.href = target;
-              return;
-            }
-          } catch (err) {}
-          window.location.href = target;
-        });
+        } catch (err) {}
+        window.location.href = target;
       });
-    })();
-  </script>
+    });
+  })();
+</script>
 
 </body>
 </html>
