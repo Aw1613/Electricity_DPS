@@ -44,7 +44,40 @@ def load_demand_model(
     if not force_reload and _CACHED_MODEL_BUNDLE is not None and _CACHED_MODEL_PATH == target_path:
         bundle = _CACHED_MODEL_BUNDLE
     else:
-        bundle = joblib.load(target_path)
+        # Cross-version numpy pickle compatibility shim (numpy 1.x vs 2.x)
+        import sys
+        try:
+            import numpy as _np
+            # Map numpy._core to numpy.core if running on numpy 1.x
+            if hasattr(_np, "core") and not hasattr(_np, "_core"):
+                sys.modules["numpy._core"] = _np.core
+                sys.modules["numpy._core.multiarray"] = _np.core.multiarray
+            # Map numpy.core to numpy._core if running on numpy 2.x
+            elif hasattr(_np, "_core") and not hasattr(_np, "core"):
+                sys.modules["numpy.core"] = _np._core
+                sys.modules["numpy.core.multiarray"] = _np._core.multiarray
+        except Exception:
+            pass
+
+        bundle = None
+        if target_path.exists():
+            try:
+                bundle = joblib.load(target_path)
+            except Exception as load_err:
+                import logging
+                logging.warning("Failed to unpickle %s (%s). Retraining model on the fly...", target_path, load_err)
+                bundle = None
+
+        if bundle is None:
+            # Automatic fallback: train model on the fly
+            from src.models.train import train_demand_model
+            trained_payload = train_demand_model(output_model_path=target_path)
+            bundle = {
+                "model": trained_payload["model"],
+                "feature_names": trained_payload["feature_names"],
+                "metadata": trained_payload.get("metadata", {}),
+            }
+
         _CACHED_MODEL_BUNDLE = bundle
         _CACHED_MODEL_PATH = target_path
 

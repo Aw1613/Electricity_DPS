@@ -163,8 +163,11 @@ def train_demand_model(
         "metadata": metadata,
     }
 
-    joblib.dump(bundle, target_path)
-    print(f"\nModel and metadata saved successfully to {target_path}")
+    try:
+        joblib.dump(bundle, target_path)
+        print(f"\nModel and metadata saved successfully to {target_path}")
+    except Exception as save_err:
+        print(f"\nWarning: could not write {target_path} ({save_err}). In-memory model bundle will be used.")
 
     return {
         "model": model,
