@@ -21,6 +21,9 @@ from dashboard.charts import (
     plot_area_breakdown_pie,
     plot_renewable_net_demand_chart,
     plot_hourly_alert_timeline,
+    plot_instant_day_profile,
+    plot_instant_week_context,
+    plot_instant_feeder_bars,
 )
 from dashboard.components import (
     render_header,
@@ -37,7 +40,28 @@ from src.services.demand_service import (
     get_area_analysis_service,
     get_renewables_analysis_service,
     get_model_info_service,
+    get_point_in_time_telemetry_service,
 )
+
+
+@st.cache_data(ttl=300)
+def load_point_in_time_data(
+    target_dt_str: str,
+    capacity_mw: float,
+    warning_threshold: float,
+    critical_threshold: float,
+    solar_capacity_mw: float,
+    demo_mode: bool = False,
+) -> dict:
+    """Fetch instant telemetry and multi-horizon context for selected date & time."""
+    return get_point_in_time_telemetry_service(
+        target_datetime=target_dt_str,
+        capacity_mw=capacity_mw,
+        warning_threshold=warning_threshold,
+        critical_threshold=critical_threshold,
+        solar_capacity_mw=solar_capacity_mw,
+        demo_mode=demo_mode,
+    )
 
 
 @st.cache_data(ttl=300)
@@ -380,9 +404,10 @@ def main():
     # -------------------------------------------------------------
     # TAB NAVIGATION
     # -------------------------------------------------------------
-    tab_overview, tab_forecast, tab_weather, tab_peaks, tab_area, tab_renewable, tab_model = st.tabs([
+    tab_overview, tab_forecast, tab_replay, tab_weather, tab_peaks, tab_area, tab_renewable, tab_model = st.tabs([
         "📊 Overview",
         "🔮 24h & 7-Day Forecasts",
+        "🎯 Instant Replay & Date Explorer",
         "🌡️ Weather Impact",
         "🚨 Peak Analysis & Alerts",
         "🗺️ Area & Feeder Breakdown",
@@ -473,7 +498,213 @@ def main():
             st.dataframe(fc_7d["daily_summary_df"], use_container_width=True, hide_index=True)
 
     # -------------------------------------------------------------
-    # TAB 3: WEATHER IMPACT
+    # TAB 3: INSTANT REPLAY & DATE EXPLORER
+    # -------------------------------------------------------------
+    with tab_replay:
+        st.markdown("### 🎯 Point-in-Time Telemetry & Historical Replay")
+        st.caption(
+            "Select any specific Year (2021–2024), Date, and Hour to retrieve exact historical grid telemetry, "
+            "evaluate AI forecast accuracy at that moment, view the complete 24-hour day curve, and analyze the 7-day weekly trend."
+        )
+
+        # 1. Preset Selector & Temporal Controls
+        ctrl_c1, ctrl_c2 = st.columns([1.5, 2.5])
+        with ctrl_c1:
+            preset_options = [
+                "Custom Date & Time Selection",
+                "🔥 All-Time Delhi Peak Demand (19 Jun 2024, 15:00)",
+                "☀️ High Summer Afternoon Peak (18 Jun 2024, 14:00)",
+                "🌙 Nighttime Heatwave AC Surge (22 May 2024, 23:00)",
+                "❄️ Deep Winter Morning Peak (16 Jan 2023, 10:00)",
+                "📉 Annual Minimum Base Load Dip (27 Jan 2021, 03:00)",
+                "🪔 Diwali Festival Evening Peak (12 Nov 2023, 20:00)",
+            ]
+            selected_preset = st.selectbox(
+                "⚡ Quick Historical Presets",
+                preset_options,
+                index=0,
+                help="Jump immediately to verified historical Delhi grid events.",
+            )
+
+        # Determine default values based on preset
+        if selected_preset == "🔥 All-Time Delhi Peak Demand (19 Jun 2024, 15:00)":
+            def_date = datetime(2024, 6, 19).date()
+            def_hour = 15
+        elif selected_preset == "☀️ High Summer Afternoon Peak (18 Jun 2024, 14:00)":
+            def_date = datetime(2024, 6, 18).date()
+            def_hour = 14
+        elif selected_preset == "🌙 Nighttime Heatwave AC Surge (22 May 2024, 23:00)":
+            def_date = datetime(2024, 5, 22).date()
+            def_hour = 23
+        elif selected_preset == "❄️ Deep Winter Morning Peak (16 Jan 2023, 10:00)":
+            def_date = datetime(2023, 1, 16).date()
+            def_hour = 10
+        elif selected_preset == "📉 Annual Minimum Base Load Dip (27 Jan 2021, 03:00)":
+            def_date = datetime(2021, 1, 27).date()
+            def_hour = 3
+        elif selected_preset == "🪔 Diwali Festival Evening Peak (12 Nov 2023, 20:00)":
+            def_date = datetime(2023, 11, 12).date()
+            def_hour = 20
+        else:
+            def_date = datetime(2024, 6, 19).date()
+            def_hour = 15
+
+        with ctrl_c2:
+            pcol1, pcol2, pcol3 = st.columns(3)
+            with pcol1:
+                sel_year = st.selectbox(
+                    "📅 Year",
+                    [2024, 2023, 2022, 2021],
+                    index=[2024, 2023, 2022, 2021].index(def_date.year),
+                    key="replay_year_select",
+                )
+            with pcol2:
+                min_cal_date = datetime(sel_year, 1, 1).date()
+                max_cal_date = datetime(sel_year, 12, 12 if sel_year == 2024 else 12, 31 if sel_year != 2024 else 12).date()
+                safe_def_date = def_date if def_date.year == sel_year else min_cal_date
+                sel_date = st.date_input(
+                    "📆 Date",
+                    value=safe_def_date,
+                    min_value=min_cal_date,
+                    max_value=max_cal_date,
+                    key="replay_date_picker",
+                )
+            with pcol3:
+                hour_labels = [f"{h:02d}:00" for h in range(24)]
+                sel_hour_str = st.selectbox(
+                    "⏰ Time (Hour)",
+                    hour_labels,
+                    index=def_hour,
+                    key="replay_hour_select",
+                )
+                sel_hour_int = int(sel_hour_str.split(":")[0])
+
+        target_dt_str = f"{sel_date.strftime('%Y-%m-%d')} {sel_hour_int:02d}:00:00"
+
+        # 2. Fetch Instant Telemetry
+        with st.spinner("Fetching instant telemetry and generating AI inference..."):
+            instant_res = load_point_in_time_data(
+                target_dt_str=target_dt_str,
+                capacity_mw=float(grid_capacity),
+                warning_threshold=float(warning_threshold),
+                critical_threshold=float(critical_threshold),
+                solar_capacity_mw=float(solar_capacity),
+                demo_mode=bool(demo_mode),
+            )
+
+        # 3. Instant KPI Row
+        st.markdown(f"#### Telemetry at <code>{instant_res['target_timestamp']}</code>", unsafe_allow_html=True)
+        rkpi1, rkpi2, rkpi3, rkpi4, rkpi5 = st.columns(5)
+        with rkpi1:
+            render_kpi_card(
+                label="Actual Demand",
+                value=f"{instant_res['actual_demand_mw']:,.0f} MW",
+                delta=f"{instant_res['utilization_pct']:.1f}% Grid Headroom",
+            )
+        with rkpi2:
+            err_mw = instant_res["error_mw"]
+            err_pct = instant_res["error_pct"]
+            err_text = f"{err_mw:+,.0f} MW ({err_pct:.1f}% error)"
+            render_kpi_card(
+                label="AI Model Prediction",
+                value=f"{instant_res['predicted_demand_mw']:,.0f} MW",
+                delta=err_text,
+                delta_color="inverse" if abs(err_pct) > 5 else "normal",
+            )
+        with rkpi3:
+            render_kpi_card(
+                label="Ambient Temperature",
+                value=f"{instant_res['temperature_c']:.1f} °C",
+                delta=f"Humidity {instant_res['humidity_pct']:.0f}%",
+            )
+        with rkpi4:
+            status_style = instant_res["alert_status"]
+            render_kpi_card(
+                label="Grid Alert Status",
+                value=status_style,
+                delta=f"{instant_res['utilization_pct']:.1f}% Capacity",
+                delta_color="inverse" if status_style != "NORMAL" else "normal",
+            )
+        with rkpi5:
+            ren = instant_res["renewable"]
+            render_kpi_card(
+                label="Rooftop Solar Shaving",
+                value=f"{ren['solar_generation_mw']:,.0f} MW",
+                delta=f"Net Load: {ren['net_demand_mw']:,.0f} MW",
+            )
+
+        # Alert recommendation banner for this instant
+        st.info(f"**Operational Dispatch Directive:** {instant_res['action_recommended']}")
+
+        # 4. Multi-Horizon Visualizations: 24-Hour Day Profile & 7-Day Context
+        st.markdown("<div style='margin-top: 14px;'></div>", unsafe_allow_html=True)
+        tab_day_view, tab_week_view = st.tabs([
+            "⏱️ 24-Hour Day Profile for Selected Date",
+            "📅 7-Day Surrounding Weekly Context",
+        ])
+
+        with tab_day_view:
+            st.markdown(f"##### Full 24-Hour Load Profile: {instant_res['target_date']}")
+            fig_day = plot_instant_day_profile(
+                day_df=instant_res["day_profile_24h"],
+                selected_hour=instant_res["target_hour"],
+                capacity_mw=float(grid_capacity),
+                warning_mw=float(grid_capacity * warning_threshold),
+                title=f"24-Hour Electricity Demand Profile for {instant_res['target_date']} (Gold Marker = {instant_res['target_hour']:02d}:00)",
+            )
+            st.plotly_chart(fig_day, use_container_width=True)
+
+            with st.expander("📋 View 24-Hour Detailed Hourly Table", expanded=False):
+                st.dataframe(
+                    instant_res["day_profile_24h"],
+                    use_container_width=True,
+                    hide_index=True,
+                )
+
+        with tab_week_view:
+            st.markdown(f"##### 7-Day Surrounding Weekly Window ({instant_res['target_date']})")
+            fig_week = plot_instant_week_context(
+                week_df=instant_res["week_context_7d"],
+                selected_date_str=instant_res["target_date"],
+                capacity_mw=float(grid_capacity),
+                title=f"7-Day Weekly Surrounding Demand Trend (Highlighted: {instant_res['target_date']})",
+            )
+            st.plotly_chart(fig_week, use_container_width=True)
+
+        # 5. Feeder Distribution & Solar Net Demand for this Instant
+        st.markdown("#### Feeder Apportionment & Renewable Net Demand at Instant")
+        col_feeders, col_solar_impact = st.columns([1.5, 1])
+
+        with col_feeders:
+            st.markdown("##### ⚡ Discom Feeder Load Apportionment")
+            feeder_df = instant_res["area_breakdown"]["area_summary_df"]
+            fig_feeders = plot_instant_feeder_bars(feeder_df)
+            st.plotly_chart(fig_feeders, use_container_width=True)
+
+        with col_solar_impact:
+            st.markdown("##### ☀️ Rooftop Solar Net Load Impact")
+            ren_info = instant_res["renewable"]
+            solar_note = f"Solar PV actively shaving {ren_info['solar_generation_mw']:,.0f} MW during midday peak." if ren_info['solar_generation_mw'] > 0 else "Nighttime / low-irradiance period: 0 MW solar generation."
+            st.markdown(
+                f"""
+                <div style='background: linear-gradient(135deg, rgba(250,204,21,0.06) 0%, rgba(0,0,0,0.5) 100%);
+                            border: 1px solid rgba(250,204,21,0.25); border-radius: 8px; padding: 18px; color: #e5e5e5;'>
+                    <b style='color: #FACC15; font-size: 1.05rem;'>☀️ Solar Generation Telemetry</b><br><br>
+                    • <b>Selected Hour:</b> <code>{instant_res['target_hour']:02d}:00 IST</code><br>
+                    • <b>Gross Grid Load:</b> <code>{ren_info['gross_demand_mw']:,.1f} MW</code><br>
+                    • <b>Solar PV Output:</b> <code>{ren_info['solar_generation_mw']:,.1f} MW</code> ({ren_info['solar_shaving_pct']:.1f}% shaved)<br>
+                    • <b>Net Dispatchable Demand:</b> <code>{ren_info['net_demand_mw']:,.1f} MW</code><br>
+                    • <b>Solar Capacity Setting:</b> <code>{ren_info['solar_capacity_mw']:,.0f} MW Installed</code><br><br>
+                    <div style='font-size: 0.82rem; color: #a3a3a3;'>
+                        {solar_note}
+                    </div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+
+    # -------------------------------------------------------------
+    # TAB 4: WEATHER IMPACT
     # -------------------------------------------------------------
     with tab_weather:
         st.markdown("### Ambient Temperature & Cooling Load Sensitivity")

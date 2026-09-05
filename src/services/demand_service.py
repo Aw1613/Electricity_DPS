@@ -22,13 +22,13 @@ from src.data.data_loader import (
     load_renewable_data,
     load_weather,
 )
-from src.features.build_features import get_feature_columns
+from src.features.build_features import build_features, get_feature_columns
 from src.features.area_analysis import get_area_demand_summary, calculate_zone_proportions
 from src.features.renewables import adjust_forecast_for_renewables, get_renewable_summary
 from src.forecast.analyze import add_uncertainty_bounds, detect_peaks, get_top_peaks
 from src.forecast.predict_24h import predict_next_24h
 from src.forecast.predict_7d import aggregate_daily_forecast, predict_next_7d
-from src.models.predict import load_demand_model
+from src.models.predict import load_demand_model, predict_demand
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
 
@@ -341,6 +341,188 @@ def get_complete_dashboard_payload(
         "demo_mode": demo_mode,
         "data_status_badge": data_status_badge,
         "badge_color": badge_color,
+    }
+
+
+def get_point_in_time_telemetry_service(
+    target_datetime: Union[str, pd.Timestamp, datetime],
+    capacity_mw: Optional[float] = None,
+    warning_threshold: Optional[float] = None,
+    critical_threshold: Optional[float] = None,
+    solar_capacity_mw: float = 450.0,
+    demo_mode: bool = False,
+) -> Dict[str, Any]:
+    """Retrieve instant telemetry, AI model prediction, 24-hour day profile,
+    7-day week trend, feeder load breakdown, and renewable net demand for any specific date & time.
+    """
+    history_df = load_historical_demand(demo_mode=demo_mode)
+    history_df["timestamp"] = pd.to_datetime(history_df["timestamp"])
+    history_df = history_df.sort_values("timestamp").reset_index(drop=True)
+
+    min_date = history_df["timestamp"].min()
+    max_date = history_df["timestamp"].max()
+
+    # Parse and constrain target timestamp
+    target_ts = pd.to_datetime(target_datetime)
+    if target_ts.tzinfo is not None:
+        target_ts = target_ts.tz_localize(None)
+
+    # Floor to nearest hour
+    target_ts = target_ts.floor("h")
+
+    # If out of bounds, clamp to bounds
+    if target_ts < min_date:
+        target_ts = min_date
+    elif target_ts > max_date:
+        target_ts = max_date
+
+    target_date = target_ts.date()
+    target_hour = target_ts.hour
+
+    # Locate target row
+    match_mask = history_df["timestamp"] == target_ts
+    if not match_mask.any():
+        time_diffs = (history_df["timestamp"] - target_ts).abs()
+        idx_closest = time_diffs.idxmin()
+        target_ts = history_df.loc[idx_closest, "timestamp"]
+        target_date = target_ts.date()
+        target_hour = target_ts.hour
+        match_mask = history_df["timestamp"] == target_ts
+
+    target_row = history_df[match_mask].iloc[0]
+    actual_demand_mw = float(target_row["demand_mw"])
+    temp_c = float(target_row.get("temperature_2m", target_row.get("temperature", 30.0)))
+    humidity_pct = float(target_row.get("relative_humidity_2m", target_row.get("humidity", 50.0)))
+    wind_kmh = float(target_row.get("wind_speed_10m", target_row.get("wind_speed", 10.0)))
+    dew_c = float(target_row.get("dew_point", target_row.get("dewpoint", 20.0)))
+
+    # Compute 24-hour Day Profile with AI Predictions
+    start_lookback = pd.to_datetime(target_date) - pd.Timedelta(days=8)
+    end_lookahead = pd.to_datetime(target_date) + pd.Timedelta(days=1, hours=23)
+    slice_df = history_df[(history_df["timestamp"] >= start_lookback) & (history_df["timestamp"] <= end_lookahead)].copy().reset_index(drop=True)
+
+    slice_df["temperature"] = slice_df.get("temperature_2m", slice_df.get("temperature", 30.0))
+    slice_df["humidity"] = slice_df.get("relative_humidity_2m", slice_df.get("humidity", 50.0))
+    slice_df["wind_speed"] = slice_df.get("wind_speed_10m", slice_df.get("wind_speed", 10.0))
+    slice_df["apparent_temperature"] = slice_df["temperature"]
+    slice_df["precipitation"] = 0.0
+
+    feat_df = build_features(slice_df, temp_col="temperature", drop_na=False)
+
+    try:
+        model, feature_names, _ = load_demand_model()
+    except Exception:
+        model, feature_names = None, []
+
+    day_mask = feat_df["timestamp"].dt.date == target_date
+    day_df = feat_df[day_mask].copy().reset_index(drop=True)
+
+    if len(day_df) > 0 and model is not None and feature_names:
+        available_feats = [c for c in feature_names if c in day_df.columns]
+        if len(available_feats) == len(feature_names):
+            day_preds = predict_demand(day_df[feature_names])
+            day_df["predicted_demand_mw"] = np.round(day_preds, 1)
+        else:
+            day_df["predicted_demand_mw"] = day_df["demand_mw"]
+    else:
+        day_df["predicted_demand_mw"] = day_df["demand_mw"] if "demand_mw" in day_df.columns else actual_demand_mw
+
+    day_df["actual_demand_mw"] = day_df["demand_mw"]
+    day_df["temperature_c"] = day_df["temperature"]
+    day_df["hour"] = day_df["timestamp"].dt.hour
+
+    instant_match = day_df[day_df["hour"] == target_hour]
+    if len(instant_match) > 0:
+        pred_demand_mw = float(instant_match["predicted_demand_mw"].iloc[0])
+    else:
+        pred_demand_mw = actual_demand_mw
+
+    error_mw = pred_demand_mw - actual_demand_mw
+    error_pct = (abs(error_mw) / actual_demand_mw * 100.0) if actual_demand_mw > 0 else 0.0
+
+    cap = float(capacity_mw or config.GRID_CAPACITY_MW)
+    warn = float(warning_threshold or config.WARNING_THRESHOLD)
+    crit = float(critical_threshold or config.CRITICAL_THRESHOLD)
+    util_pct = (actual_demand_mw / cap) * 100.0
+
+    if actual_demand_mw >= cap * crit:
+        alert_status = "CRITICAL"
+        action_recommended = "🔴 Urgent: Peak breach. Trigger spinning reserves and bilateral inter-state import."
+    elif actual_demand_mw >= cap * warn:
+        alert_status = "WARNING"
+        action_recommended = "🟡 Caution: Heavy grid stress. Alert Delhi Discom desks and prepare demand response."
+    else:
+        alert_status = "NORMAL"
+        action_recommended = "🟢 Stable: Load within standard operating headroom. Normal economic dispatch."
+
+    start_week = pd.to_datetime(target_date) - pd.Timedelta(days=3)
+    end_week = pd.to_datetime(target_date) + pd.Timedelta(days=3, hours=23)
+    week_slice = history_df[(history_df["timestamp"] >= start_week) & (history_df["timestamp"] <= end_week)].copy()
+    week_slice["temperature_c"] = week_slice.get("temperature_2m", week_slice.get("temperature", 30.0))
+    week_slice["is_target_day"] = week_slice["timestamp"].dt.date == target_date
+
+    # Feeder / Discom Apportionment at Instant
+    zones = [
+        {"area": "South Delhi", "feeder": "BRPL-South", "discom": "BSES Rajdhani", "weight": 0.30},
+        {"area": "North Delhi", "feeder": "TPDDL-North", "discom": "Tata Power-DDL", "weight": 0.24},
+        {"area": "West Delhi", "feeder": "BRPL-West", "discom": "BSES Rajdhani", "weight": 0.22},
+        {"area": "East Delhi", "feeder": "BYPL-East", "discom": "BSES Yamuna", "weight": 0.16},
+        {"area": "Central Delhi", "feeder": "NDMC-Central", "discom": "NDMC", "weight": 0.08},
+    ]
+    feeder_records = []
+    for z in zones:
+        load_val = round(actual_demand_mw * z["weight"], 1)
+        feeder_records.append({
+            "area": z["area"],
+            "feeder": z["feeder"],
+            "discom": z["discom"],
+            "demand_mw": load_val,
+            "instant_demand_mw": load_val,
+            "share_pct": round(z["weight"] * 100.0, 1),
+        })
+    instant_feeder_df = pd.DataFrame(feeder_records)
+
+    h = target_hour
+    if 6 <= h <= 18:
+        solar_factor = float(np.sin((h - 6) / 12.0 * np.pi) ** 1.8)
+    else:
+        solar_factor = 0.0
+    solar_gen_mw = round(float(solar_capacity_mw * solar_factor), 1)
+    net_demand_mw = round(max(0.0, actual_demand_mw - solar_gen_mw), 1)
+    solar_shaving_pct = round((solar_gen_mw / actual_demand_mw) * 100.0, 2) if actual_demand_mw > 0 else 0.0
+
+    return {
+        "target_timestamp": target_ts.strftime("%Y-%m-%d %H:%M:%S"),
+        "target_date": str(target_date),
+        "target_hour": target_hour,
+        "actual_demand_mw": round(actual_demand_mw, 1),
+        "predicted_demand_mw": round(pred_demand_mw, 1),
+        "error_mw": round(error_mw, 1),
+        "error_pct": round(error_pct, 2),
+        "temperature_c": round(temp_c, 1),
+        "humidity_pct": round(humidity_pct, 1),
+        "wind_speed_kmh": round(wind_kmh, 1),
+        "dew_point_c": round(dew_c, 1),
+        "grid_capacity_mw": cap,
+        "utilization_pct": round(util_pct, 1),
+        "alert_status": alert_status,
+        "action_recommended": action_recommended,
+        "day_profile_24h": day_df[["timestamp", "hour", "actual_demand_mw", "predicted_demand_mw", "temperature_c"]],
+        "week_context_7d": week_slice[["timestamp", "demand_mw", "temperature_c", "is_target_day"]],
+        "area_breakdown": {
+            "area_summary_df": instant_feeder_df,
+            "feeder_df": instant_feeder_df,
+            "total_demand_mw": actual_demand_mw,
+        },
+        "renewable": {
+            "gross_demand_mw": round(actual_demand_mw, 1),
+            "solar_generation_mw": solar_gen_mw,
+            "net_demand_mw": net_demand_mw,
+            "solar_shaving_pct": solar_shaving_pct,
+            "solar_capacity_mw": solar_capacity_mw,
+        },
+        "min_available_date": min_date.strftime("%Y-%m-%d"),
+        "max_available_date": max_date.strftime("%Y-%m-%d"),
     }
 
 

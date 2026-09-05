@@ -21,6 +21,9 @@ from dashboard.charts import (
     plot_area_breakdown_pie,
     plot_renewable_net_demand_chart,
     plot_hourly_alert_timeline,
+    plot_instant_day_profile,
+    plot_instant_week_context,
+    plot_instant_feeder_bars,
 )
 from src.services.demand_service import get_complete_dashboard_payload
 
@@ -77,6 +80,32 @@ def test_plotly_figures_generation():
     # 7. Hourly Alert Timeline
     fig8 = plot_hourly_alert_timeline(df)
     assert isinstance(fig8, go.Figure)
+
+    # 8. Instant Day Profile
+    day_test_df = pd.DataFrame({
+        "timestamp": timestamps,
+        "hour": list(range(24)),
+        "actual_demand_mw": demands,
+        "predicted_demand_mw": demands,
+        "temperature_c": [34.0] * 24,
+    })
+    fig9 = plot_instant_day_profile(day_test_df, selected_hour=15, capacity_mw=9000.0)
+    assert isinstance(fig9, go.Figure)
+
+    # 9. Instant Week Context
+    fig10 = plot_instant_week_context(df, selected_date_str="2024-06-01", capacity_mw=9000.0)
+    assert isinstance(fig10, go.Figure)
+
+    # 10. Instant Feeder Bars
+    feeder_test_df = pd.DataFrame({
+        "area": ["South Delhi", "North Delhi"],
+        "feeder": ["BRPL-South", "TPDDL-North"],
+        "discom": ["BSES Rajdhani", "Tata Power-DDL"],
+        "instant_demand_mw": [2400.0, 1920.0],
+        "share_pct": [30.0, 24.0],
+    })
+    fig11 = plot_instant_feeder_bars(feeder_test_df)
+    assert isinstance(fig11, go.Figure)
 
 
 def test_dashboard_master_payload():

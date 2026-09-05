@@ -535,3 +535,240 @@ def plot_hourly_alert_timeline(forecast_df: pd.DataFrame) -> go.Figure:
     )
 
     return fig
+
+
+def plot_instant_day_profile(
+    day_df: pd.DataFrame,
+    selected_hour: int,
+    capacity_mw: Optional[float] = None,
+    warning_mw: Optional[float] = None,
+    title: str = "24-Hour Day Profile (Actual vs. AI Forecast)",
+) -> go.Figure:
+    """Plot 24-hour day profile with Actual Demand, AI Forecast, Temperature, and highlighted instant."""
+    fig = go.Figure()
+    if day_df.empty:
+        return fig
+
+    df = day_df.copy()
+    hours = df["hour"]
+
+    # 1. Actual Demand
+    if "actual_demand_mw" in df.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=hours,
+                y=df["actual_demand_mw"],
+                mode="lines+markers",
+                name="Actual Demand (MW)",
+                line=dict(color=THEME_COLORS["actual"], width=3),
+                marker=dict(size=6),
+                hovertemplate="Hour %{x}:00<br><b>Actual Demand</b>: %{y:,.1f} MW<extra></extra>",
+            )
+        )
+
+    # 2. Predicted Demand
+    if "predicted_demand_mw" in df.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=hours,
+                y=df["predicted_demand_mw"],
+                mode="lines+markers",
+                name="AI Model Forecast (MW)",
+                line=dict(color=THEME_COLORS["forecast"], width=2.5, dash="dash"),
+                marker=dict(size=6),
+                hovertemplate="Hour %{x}:00<br><b>AI Forecast</b>: %{y:,.1f} MW<extra></extra>",
+            )
+        )
+
+    # 3. Ambient Temperature on Secondary Y-Axis
+    if "temperature_c" in df.columns:
+        fig.add_trace(
+            go.Scatter(
+                x=hours,
+                y=df["temperature_c"],
+                mode="lines",
+                name="Ambient Temp (°C)",
+                yaxis="y2",
+                line=dict(color="#EF4444", width=2, dash="dot"),
+                hovertemplate="Hour %{x}:00<br><b>Temp</b>: %{y:.1f} °C<extra></extra>",
+            )
+        )
+
+    # 4. Highlight Selected Instant Marker
+    instant_row = df[df["hour"] == selected_hour]
+    if not instant_row.empty:
+        val = instant_row["actual_demand_mw"].iloc[0] if "actual_demand_mw" in instant_row else instant_row["demand_mw"].iloc[0]
+        fig.add_trace(
+            go.Scatter(
+                x=[selected_hour],
+                y=[val],
+                mode="markers+text",
+                name=f"Selected Instant ({selected_hour:02d}:00)",
+                marker=dict(color="#FACC15", size=15, symbol="diamond", line=dict(color="#FFFFFF", width=2)),
+                text=[f"📍 {val:,.0f} MW"],
+                textposition="top center",
+                hovertemplate=f"<b>Selected Instant: {selected_hour:02d}:00</b><br>Load: %{{y:,.1f}} MW<extra></extra>",
+            )
+        )
+
+    # Grid Capacity line
+    if capacity_mw:
+        fig.add_hline(
+            y=capacity_mw,
+            line=dict(color=THEME_COLORS["capacity"], width=1.5, dash="dash"),
+            annotation_text=f"Grid Capacity ({capacity_mw:,.0f} MW)",
+            annotation_position="top right",
+            annotation_font=dict(color=THEME_COLORS["capacity"], size=11),
+        )
+
+    if warning_mw:
+        fig.add_hline(
+            y=warning_mw,
+            line=dict(color=THEME_COLORS["warning"], width=1, dash="dot"),
+            annotation_text=f"Warning ({warning_mw:,.0f} MW)",
+            annotation_position="bottom right",
+            annotation_font=dict(color=THEME_COLORS["warning"], size=10),
+        )
+
+    fig.update_layout(
+        title=dict(text=title, font=dict(size=15)),
+        xaxis=dict(
+            title="Hour of Day (00:00 - 23:00)",
+            tickmode="linear",
+            tick0=0,
+            dtick=2,
+            gridcolor=THEME_COLORS["grid_line"],
+        ),
+        yaxis=dict(
+            title="Electricity Demand (MW)",
+            gridcolor=THEME_COLORS["grid_line"],
+        ),
+        yaxis2=dict(
+            title=dict(text="Ambient Temp (°C)", font=dict(color="#EF4444")),
+            overlaying="y",
+            side="right",
+            showgrid=False,
+            tickfont=dict(color="#EF4444"),
+        ),
+        hovermode="x unified",
+        template="plotly_dark",
+        paper_bgcolor=THEME_COLORS["dark_bg"],
+        plot_bgcolor=THEME_COLORS["card_bg"],
+        font=dict(family="'Inter', sans-serif", color=THEME_COLORS["text"]),
+        legend=dict(orientation="h", yanchor="bottom", y=1.04, xanchor="right", x=1),
+        margin=dict(l=50, r=50, t=60, b=40),
+        height=380,
+    )
+
+    return fig
+
+
+def plot_instant_week_context(
+    week_df: pd.DataFrame,
+    selected_date_str: str,
+    capacity_mw: Optional[float] = None,
+    title: str = "7-Day Weekly Surrounding Demand Trend",
+) -> go.Figure:
+    """Plot 7-day weekly demand trend with the selected date highlighted."""
+    fig = go.Figure()
+    if week_df.empty:
+        return fig
+
+    df = week_df.copy()
+    ts = pd.to_datetime(df["timestamp"])
+
+    fig.add_trace(
+        go.Scatter(
+            x=ts,
+            y=df["demand_mw"],
+            mode="lines",
+            name="Grid Demand (MW)",
+            line=dict(color=THEME_COLORS["actual"], width=2.2),
+            hovertemplate="Time: %{x}<br><b>Demand</b>: %{y:,.1f} MW<extra></extra>",
+        )
+    )
+
+    try:
+        sel_dt = pd.to_datetime(selected_date_str)
+        start_sel = sel_dt.replace(hour=0, minute=0, second=0)
+        end_sel = sel_dt.replace(hour=23, minute=59, second=59)
+        fig.add_vrect(
+            x0=start_sel,
+            x1=end_sel,
+            fillcolor="rgba(250, 204, 21, 0.12)",
+            layer="below",
+            line_width=1,
+            line_color="rgba(250, 204, 21, 0.4)",
+            annotation_text="Selected Day",
+            annotation_position="top left",
+            annotation_font=dict(color="#FACC15", size=10),
+        )
+    except Exception:
+        pass
+
+    if capacity_mw:
+        fig.add_hline(
+            y=capacity_mw,
+            line=dict(color=THEME_COLORS["capacity"], width=1, dash="dash"),
+            annotation_text=f"Capacity ({capacity_mw:,.0f} MW)",
+            annotation_position="top right",
+            annotation_font=dict(color=THEME_COLORS["capacity"], size=10),
+        )
+
+    fig.update_layout(
+        title=dict(text=title, font=dict(size=15)),
+        xaxis=dict(title="Date & Time", gridcolor=THEME_COLORS["grid_line"]),
+        yaxis=dict(title="Demand (MW)", gridcolor=THEME_COLORS["grid_line"]),
+        template="plotly_dark",
+        paper_bgcolor=THEME_COLORS["dark_bg"],
+        plot_bgcolor=THEME_COLORS["card_bg"],
+        font=dict(family="'Inter', sans-serif", color=THEME_COLORS["text"]),
+        margin=dict(l=50, r=40, t=50, b=40),
+        height=320,
+    )
+
+    return fig
+
+
+def plot_instant_feeder_bars(feeder_df: pd.DataFrame) -> go.Figure:
+    """Horizontal bar chart showing instant load apportioned to Delhi feeders / Discoms."""
+    fig = go.Figure()
+    if feeder_df.empty:
+        return fig
+
+    df = feeder_df.copy()
+    discom_palette = {
+        "BSES Rajdhani": "#3B82F6",
+        "Tata Power-DDL": "#8B5CF6",
+        "BSES Yamuna": "#EC4899",
+        "NDMC": "#10B981",
+    }
+    colors = [discom_palette.get(d, "#3B82F6") for d in df["discom"]]
+
+    val_col = "instant_demand_mw" if "instant_demand_mw" in df.columns else "demand_mw"
+
+    fig.add_trace(
+        go.Bar(
+            y=df["feeder"] + " (" + df["area"] + ")",
+            x=df[val_col],
+            orientation="h",
+            marker=dict(color=colors),
+            text=[f"{v:,.0f} MW ({s}%)" for v, s in zip(df[val_col], df["share_pct"])],
+            textposition="auto",
+            hovertemplate="<b>%{y}</b><br>Instant Load: %{x:,.1f} MW<extra></extra>",
+        )
+    )
+
+    fig.update_layout(
+        title=dict(text="Feeder Load Apportionment at Instant", font=dict(size=15)),
+        xaxis=dict(title="Apportioned Load (MW)", gridcolor=THEME_COLORS["grid_line"]),
+        yaxis=dict(autorange="reversed"),
+        template="plotly_dark",
+        paper_bgcolor=THEME_COLORS["dark_bg"],
+        plot_bgcolor=THEME_COLORS["card_bg"],
+        font=dict(family="'Inter', sans-serif", color=THEME_COLORS["text"]),
+        margin=dict(l=50, r=40, t=50, b=40),
+        height=300,
+    )
+
+    return fig
