@@ -29,8 +29,13 @@ from src.forecast.analyze import add_uncertainty_bounds, detect_peaks, get_top_p
 from src.forecast.predict_24h import predict_next_24h
 from src.forecast.predict_7d import aggregate_daily_forecast, predict_next_7d
 from src.models.predict import load_demand_model, predict_demand
+import time
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+
+# In-memory forecast caches (TTL 600s) to avoid repeating expensive ML inferences on slider/tab changes
+_FORECAST_24H_CACHE: Dict[Any, Tuple[float, pd.DataFrame]] = {}
+_FORECAST_7D_CACHE: Dict[Any, Tuple[float, pd.DataFrame, pd.DataFrame]] = {}
 
 
 def get_historical_demand_service(
@@ -132,15 +137,21 @@ def generate_24h_forecast_service(
     weather_forecast_df = load_weather(demo_mode=demo_mode) if demo_mode else None
     history_df = load_historical_demand(demo_mode=demo_mode) if demo_mode else None
 
-    # 1. Generate 24-hour raw predictions
-    raw_forecast_df = predict_next_24h(
-        historical_df=history_df,
-        weather_forecast_df=weather_forecast_df,
-        model_path=model_path,
-    )
-
-    # 2. Add uncertainty bands
-    forecast_df = add_uncertainty_bounds(raw_forecast_df, model_path=model_path)
+    # 1. Retrieve or generate 24-hour predictions with 10-minute memory caching
+    cache_key = (demo_mode, str(model_path))
+    now = time.time()
+    if cache_key in _FORECAST_24H_CACHE and (now - _FORECAST_24H_CACHE[cache_key][0] < 600):
+        forecast_df = _FORECAST_24H_CACHE[cache_key][1].copy()
+    else:
+        weather_forecast_df = load_weather(demo_mode=demo_mode) if demo_mode else None
+        history_df = load_historical_demand(demo_mode=demo_mode) if demo_mode else None
+        raw_forecast_df = predict_next_24h(
+            historical_df=history_df,
+            weather_forecast_df=weather_forecast_df,
+            model_path=model_path,
+        )
+        forecast_df = add_uncertainty_bounds(raw_forecast_df, model_path=model_path)
+        _FORECAST_24H_CACHE[cache_key] = (now, forecast_df.copy())
 
     # 3. Peak analysis
     peak_analysis = detect_peaks(
@@ -185,18 +196,23 @@ def generate_7d_forecast_service(
     weather_forecast_df = load_weather(demo_mode=demo_mode) if demo_mode else None
     history_df = load_historical_demand(demo_mode=demo_mode) if demo_mode else None
 
-    # 1. Generate 168-hour recursive predictions
-    raw_forecast_7d = predict_next_7d(
-        historical_df=history_df,
-        weather_forecast_df=weather_forecast_df,
-        model_path=model_path,
-    )
-
-    # 2. Add uncertainty intervals
-    forecast_7d = add_uncertainty_bounds(raw_forecast_7d, model_path=model_path)
-
-    # 3. Compute daily summaries
-    daily_summary_df = aggregate_daily_forecast(forecast_7d)
+    # 1. Retrieve or generate 168-hour recursive predictions with 10-minute memory caching
+    cache_key = (demo_mode, str(model_path))
+    now = time.time()
+    if cache_key in _FORECAST_7D_CACHE and (now - _FORECAST_7D_CACHE[cache_key][0] < 600):
+        forecast_7d = _FORECAST_7D_CACHE[cache_key][1].copy()
+        daily_summary_df = _FORECAST_7D_CACHE[cache_key][2].copy()
+    else:
+        weather_forecast_df = load_weather(demo_mode=demo_mode) if demo_mode else None
+        history_df = load_historical_demand(demo_mode=demo_mode) if demo_mode else None
+        raw_forecast_7d = predict_next_7d(
+            historical_df=history_df,
+            weather_forecast_df=weather_forecast_df,
+            model_path=model_path,
+        )
+        forecast_7d = add_uncertainty_bounds(raw_forecast_7d, model_path=model_path)
+        daily_summary_df = aggregate_daily_forecast(forecast_7d)
+        _FORECAST_7D_CACHE[cache_key] = (now, forecast_7d.copy(), daily_summary_df.copy())
 
     # 4. Peak analysis across 7 days
     peak_analysis_7d = detect_peaks(

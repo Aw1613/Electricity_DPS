@@ -16,6 +16,9 @@ DATA_DIR = PROJECT_ROOT / "data"
 RAW_DIR = DATA_DIR / "raw"
 MOCK_DIR = DATA_DIR / "mock"
 
+# Module-level memory cache for processed demand data
+_DEMAND_CACHE = {}
+
 
 def load_historical_demand(
     filepath: Optional[Union[str, Path]] = None,
@@ -34,6 +37,9 @@ def load_historical_demand(
     Returns:
         DataFrame containing sorted ['timestamp', 'demand_mw'] (or with area/feeder if aggregate_total=False).
     """
+    cache_key = (str(filepath), aggregate_total, demo_mode)
+    if cache_key in _DEMAND_CACHE:
+        return _DEMAND_CACHE[cache_key].copy()
     if demo_mode:
         target_path = MOCK_DIR / "synthetic_demand.csv"
         if not target_path.exists():
@@ -99,7 +105,8 @@ def load_historical_demand(
             df_resampled = df.set_index("timestamp")[numeric_cols].resample("1h").mean()
             df = df_resampled.interpolate(method="linear").ffill().bfill().reset_index()
 
-    return df
+    _DEMAND_CACHE[cache_key] = df
+    return df.copy()
 
 
 def load_weather(

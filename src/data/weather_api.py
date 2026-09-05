@@ -20,6 +20,9 @@ MOCK_DIR = DATA_DIR / "mock"
 CACHE_FILE = RAW_DIR / "weather_cache.csv"
 MOCK_FILE = MOCK_DIR / "weather_mock.csv"
 
+# In-memory weather cache to prevent repeated HTTP calls across tabs/widgets
+_WEATHER_MEMORY_CACHE = {}
+
 # Required weather variables
 WEATHER_VARIABLES = [
     "temperature_2m",
@@ -163,6 +166,10 @@ def fetch_weather_data(
     3. Tries fetching fresh data from Open-Meteo API.
     4. On network or API failure, falls back to cache or generates realistic mock data.
     """
+    mem_key = (str(start_date), str(end_date), demo_mode)
+    if not force_refresh and mem_key in _WEATHER_MEMORY_CACHE:
+        return _WEATHER_MEMORY_CACHE[mem_key].copy()
+
     cache_target = cache_path or CACHE_FILE
 
     # If in demo mode, strictly bypass network API calls
@@ -209,10 +216,14 @@ def fetch_weather_data(
     try:
         df = fetch_weather_from_api(start_date=start_date, end_date=end_date, timeout=timeout)
         # Save successful fetch to cache
-        cache_target.parent.mkdir(parents=True, exist_ok=True)
-        df.to_csv(cache_target, index=False)
+        try:
+            cache_target.parent.mkdir(parents=True, exist_ok=True)
+            df.to_csv(cache_target, index=False)
+        except Exception:
+            pass
         df.attrs["data_source"] = "LIVE DATA (Open-Meteo API)"
-        return df
+        _WEATHER_MEMORY_CACHE[mem_key] = df
+        return df.copy()
     except Exception as e:
         print(f"Notice: Open-Meteo API unavailable ({e}). Falling back to local cache or mock weather.")
 
