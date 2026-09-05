@@ -549,32 +549,58 @@ def main():
             def_date = datetime(2024, 6, 19).date()
             def_hour = 15
 
+        # Check if preset changed to sync year/date/hour in session state
+        if "last_selected_preset" not in st.session_state:
+            st.session_state["last_selected_preset"] = selected_preset
+
+        if selected_preset != st.session_state["last_selected_preset"]:
+            st.session_state["last_selected_preset"] = selected_preset
+            if selected_preset != "Custom Date & Time Selection":
+                st.session_state["replay_year_select"] = def_date.year
+                st.session_state[f"replay_date_picker_{def_date.year}"] = def_date
+                st.session_state["replay_hour_select"] = f"{def_hour:02d}:00"
+
         with ctrl_c2:
             pcol1, pcol2, pcol3 = st.columns(3)
             with pcol1:
+                year_options = [2024, 2023, 2022, 2021]
+                default_year_idx = year_options.index(def_date.year) if def_date.year in year_options else 0
                 sel_year = st.selectbox(
                     "📅 Year",
-                    [2024, 2023, 2022, 2021],
-                    index=[2024, 2023, 2022, 2021].index(def_date.year),
+                    year_options,
+                    index=default_year_idx,
                     key="replay_year_select",
                 )
             with pcol2:
                 min_cal_date = datetime(sel_year, 1, 1).date()
-                max_cal_date = datetime(sel_year, 12, 12 if sel_year == 2024 else 12, 31 if sel_year != 2024 else 12).date()
-                safe_def_date = def_date if def_date.year == sel_year else min_cal_date
+                if sel_year == 2024:
+                    max_cal_date = datetime(2024, 12, 12).date()
+                else:
+                    max_cal_date = datetime(sel_year, 12, 31).date()
+
+                if def_date.year == sel_year:
+                    initial_date = def_date
+                else:
+                    initial_date = datetime(sel_year, 6, 19).date()
+
+                if initial_date < min_cal_date:
+                    initial_date = min_cal_date
+                elif initial_date > max_cal_date:
+                    initial_date = max_cal_date
+
                 sel_date = st.date_input(
                     "📆 Date",
-                    value=safe_def_date,
+                    value=initial_date,
                     min_value=min_cal_date,
                     max_value=max_cal_date,
-                    key="replay_date_picker",
+                    key=f"replay_date_picker_{sel_year}",
                 )
             with pcol3:
                 hour_labels = [f"{h:02d}:00" for h in range(24)]
                 sel_hour_str = st.selectbox(
                     "⏰ Time (Hour)",
                     hour_labels,
-                    index=def_hour,
+                    index=def_hour if 0 <= def_hour < 24 else 15,
                     key="replay_hour_select",
                 )
                 sel_hour_int = int(sel_hour_str.split(":")[0])
